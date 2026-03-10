@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-03-10
+
+### Fixed
+- Fixed scroll broken since v1.2.97: overflow:hidden was applied to xterm container itself, killing xterm's internal scroll viewport
+- Now only parents above .xterm get overflow:hidden; xterm and its children retain their native scroll behavior
+
 ## [1.2.99] - 2026-03-10
 
 ### Fixed

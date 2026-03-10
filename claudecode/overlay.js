@@ -736,7 +736,8 @@
 
     var xterm = document.querySelector('.xterm');
     if (xterm) {
-      var el = xterm;
+      // Set size on parents above xterm (with overflow hidden)
+      var el = xterm.parentElement;
       while (el && el !== document.body) {
         el.style.height = termH + 'px';
         el.style.maxHeight = termH + 'px';
@@ -745,6 +746,8 @@
         el.style.overflow = 'hidden';
         el = el.parentElement;
       }
+      // Set size on xterm container but DON'T set overflow hidden
+      // (xterm.js needs its internal .xterm-viewport to scroll)
       xterm.style.height = termH + 'px';
       xterm.style.maxHeight = termH + 'px';
       xterm.style.width = termW + 'px';
