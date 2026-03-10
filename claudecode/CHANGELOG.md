@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.9] - 2026-03-10
+
+### Fixed
+- Simplified layout: keyboard open → 21 rows, keyboard closed → 100% full height
+- Removed hasHadInput flag — snap to 21 rows immediately on every focusin
+- Bar sits at bottom when keyboard is hidden
+
 ## [1.3.8] - 2026-03-10
 
 ### Fixed

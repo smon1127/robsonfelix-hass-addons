@@ -696,7 +696,6 @@
 
   // -- Layout engine --
   var kbOpen = false;
-  var hasHadInput = false; // true after first keyboard open; starts at 100% until then
   var fullH = window.innerHeight;
 
   function fitTerminal() {
@@ -770,15 +769,11 @@
     var kbDetected = (fullH - visH) > 100;
 
     if (kbOpen || kbDetected) {
-      hasHadInput = true;
-      // If viewport detects keyboard, use that height; otherwise target 21 terminal rows
+      // Keyboard open: snap to 21 rows (or viewport height if keyboard detected)
       var h = kbDetected ? visH : getDefaultKbHeight();
       setHeight(h);
-    } else if (hasHadInput) {
-      // After keyboard was used at least once, keep 21-row default
-      setHeight(getDefaultKbHeight());
     } else {
-      // Initial state: full height until first keyboard interaction
+      // Keyboard closed: full height
       setHeight(fullH);
     }
   }
@@ -832,7 +827,6 @@
     document.addEventListener('focusin', function (e) {
       if (e.target && e.target.classList && e.target.classList.contains('xterm-helper-textarea')) {
         kbOpen = true;
-        hasHadInput = true;
         var btn = document.getElementById('kb-kbd');
         if (btn) btn.classList.add('kb-active');
         updateLayout();
@@ -887,9 +881,7 @@
       e.preventDefault();
     }, { passive: false });
 
-    // Start at full height; snap to 21 rows on first focusin (when cell dims are accurate)
-    kbOpen = false;
-    hasHadInput = false;
+    // Start at full height; snaps to 21 rows when keyboard opens via focusin
     updateLayout();
 
     // iOS requires a user gesture to show keyboard in WKWebView.
