@@ -366,8 +366,6 @@
     e.preventDefault();
     var startY = e.touches[0].clientY;
     var startBarTop = bar.getBoundingClientRect().top;
-    var btn = document.getElementById('kb-resize');
-    if (btn) btn.classList.add('kb-active');
 
     function onMove(ev) {
       ev.preventDefault();
@@ -377,7 +375,6 @@
       setHeight(newTermH + BAR_H);
     }
     function onEnd() {
-      if (btn) btn.classList.remove('kb-active');
       document.removeEventListener('touchmove', onMove);
       document.removeEventListener('touchend', onEnd);
     }
@@ -465,8 +462,7 @@
     return b;
   }
 
-  // Buttons — esc first, arrows, sel, paste, resize (left), then modifiers, then utility (right)
-  bar.appendChild(mkBtn('esc', function () { sendSeq('Escape'); }));
+  // Buttons — arrows, sel, paste (left), then modifiers, then utility (right)
   bar.appendChild(mkBtn('<i class="fa-solid fa-caret-left"></i>', function () { sendSeq('ArrowLeft'); }, { cls: 'kb-icon', html: true }));
   bar.appendChild(mkBtn('<i class="fa-solid fa-caret-right"></i>', function () { sendSeq('ArrowRight'); }, { cls: 'kb-icon', html: true }));
   bar.appendChild(mkBtn('<i class="fa-solid fa-caret-up"></i>', function () { sendSeq('ArrowUp'); }, { cls: 'kb-icon', html: true }));
@@ -484,15 +480,16 @@
       fallbackPaste();
     }
   }, { cls: 'kb-icon', html: true }));
+  // Resize handle — next to paste button
+  var resizeBtn = mkBtn('<i class="fa-solid fa-up-down"></i>', function () {}, { cls: 'kb-resize', html: true });
+  resizeBtn.addEventListener('touchstart', onResizeTouchStart, { passive: false });
+  bar.appendChild(resizeBtn);
   bar.appendChild(mkBtn('ctrl', toggleCtrl, { id: 'kb-ctrl', toggle: true }));
+  bar.appendChild(mkBtn('esc', function () { sendSeq('Escape'); }));
   bar.appendChild(mkBtn('tab', function () { sendSeq('Tab'); }));
   bar.appendChild(mkBtn('opt', toggleOpt, { id: 'kb-opt', toggle: true }));
   // Keyboard toggle
   bar.appendChild(mkBtn('<i class="fa-regular fa-keyboard"></i>', toggleKeyboard, { id: 'kb-kbd', cls: 'kb-icon', toggle: true, norefocus: true, html: true }));
-  // Resize handle — far right, highlights while dragging
-  var resizeBtn = mkBtn('<i class="fa-solid fa-up-down"></i>', function () {}, { id: 'kb-resize', cls: 'kb-resize', html: true });
-  resizeBtn.addEventListener('touchstart', onResizeTouchStart, { passive: false });
-  bar.appendChild(resizeBtn);
 
   // -- Custom scrollbar --
   var sbEl = document.createElement('div');
@@ -597,106 +594,6 @@
     }
     updateScrollbar();
   }
-
-  // -- Terminal area touch scroll (slow, natural direction, with inertia) --
-  var termScroll = {
-    active: false,
-    lastY: 0,
-    remainder: 0,
-    lastTime: 0,
-    velocities: [],
-    inertiaV: 0,
-    inertiaTimer: 0,
-  };
-  // Pixels of finger movement per 1 terminal row scroll (higher = slower)
-  var TERM_SCROLL_SENSITIVITY = 40;
-
-  function termScrollByPx(dy) {
-    termScroll.remainder += dy;
-    var rows = Math.trunc(termScroll.remainder / TERM_SCROLL_SENSITIVITY);
-    if (rows === 0) return;
-    termScroll.remainder -= rows * TERM_SCROLL_SENSITIVITY;
-    var t = window.term;
-    if (t && typeof t.scrollLines === 'function') {
-      t.scrollLines(rows);
-    }
-  }
-
-  function termStartInertia() {
-    termCancelInertia();
-    if (Math.abs(termScroll.inertiaV) < 0.5) return;
-    var friction = 0.95;
-    function tick() {
-      termScroll.inertiaV *= friction;
-      if (Math.abs(termScroll.inertiaV) < 0.5) { termScroll.inertiaV = 0; return; }
-      termScrollByPx(termScroll.inertiaV);
-      updateScrollbar();
-      termScroll.inertiaTimer = requestAnimationFrame(tick);
-    }
-    termScroll.inertiaTimer = requestAnimationFrame(tick);
-  }
-
-  function termCancelInertia() {
-    if (termScroll.inertiaTimer) {
-      cancelAnimationFrame(termScroll.inertiaTimer);
-      termScroll.inertiaTimer = 0;
-    }
-    termScroll.inertiaV = 0;
-  }
-
-  function onTermTouchStart(e) {
-    // Only handle single-finger on terminal area, not in sel mode
-    if (selMode || e.touches.length !== 1) return;
-    // Check if touch is on xterm screen
-    var el = e.target;
-    var onXterm = false;
-    while (el && el !== document.body) {
-      if (el.classList && (el.classList.contains('xterm-screen') || el.classList.contains('xterm'))) { onXterm = true; break; }
-      if (el.id === 'kb-bar' || el.id === 'term-scrollbar') return;
-      el = el.parentElement;
-    }
-    if (!onXterm) return;
-    termCancelInertia();
-    termScroll.active = true;
-    termScroll.lastY = e.touches[0].clientY;
-    termScroll.remainder = 0;
-    termScroll.lastTime = Date.now();
-    termScroll.velocities = [];
-  }
-
-  function onTermTouchMove(e) {
-    if (!termScroll.active || e.touches.length !== 1) return;
-    var curY = e.touches[0].clientY;
-    var dy = termScroll.lastY - curY; // natural: swipe up = positive = scroll down into history
-    var now = Date.now();
-    var dt = now - termScroll.lastTime;
-    termScrollByPx(dy);
-    updateScrollbar();
-    // Track velocity (px per 16ms frame)
-    if (dt > 0) {
-      var v = (dy / dt) * 16;
-      termScroll.velocities.push(v);
-      if (termScroll.velocities.length > 5) termScroll.velocities.shift();
-    }
-    termScroll.lastY = curY;
-    termScroll.lastTime = now;
-  }
-
-  function onTermTouchEnd() {
-    if (!termScroll.active) return;
-    termScroll.active = false;
-    var vels = termScroll.velocities;
-    if (vels.length > 0) {
-      var sum = 0;
-      for (var i = 0; i < vels.length; i++) sum += vels[i];
-      termScroll.inertiaV = sum / vels.length;
-      termStartInertia();
-    }
-  }
-
-  document.addEventListener('touchstart', onTermTouchStart, { passive: true });
-  document.addEventListener('touchmove', onTermTouchMove, { passive: true });
-  document.addEventListener('touchend', onTermTouchEnd, { passive: true });
 
   // -- Layout engine --
   var kbOpen = false;
@@ -836,12 +733,9 @@
     document.addEventListener('focusin', function (e) {
       if (e.target && e.target.classList && e.target.classList.contains('xterm-helper-textarea')) {
         kbOpen = true;
-        hasHadInput = true;
         var btn = document.getElementById('kb-kbd');
         if (btn) btn.classList.add('kb-active');
-        updateLayout();
         setTimeout(updateLayout, 300);
-        setTimeout(updateLayout, 600);
       }
     });
     document.addEventListener('focusout', function (e) {

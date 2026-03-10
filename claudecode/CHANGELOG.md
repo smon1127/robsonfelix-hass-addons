@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.6] - 2026-03-10
+
+### Fixed
+- Full revert to exact v1.2.92 overlay.js and start.sh to debug scrollbar
+- Removed .tmux.conf creation (history-limit, mouse off, status off)
+- Removed --cwd flag from ttyd
+- Removed working_directory reading from start.sh
+- This is a clean revert to isolate scrollbar regression
+
 ## [1.3.5] - 2026-03-10
 
 ### Fixed
