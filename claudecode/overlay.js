@@ -225,7 +225,7 @@
   var css = document.createElement('style');
   css.textContent =
     'html,body{margin:0;padding:0;overflow:hidden !important;height:100vh;height:100dvh;}' +
-    '#kb-bar{position:fixed;left:0;right:0;bottom:0;z-index:99999;' +
+    '#kb-bar{position:fixed;left:0;right:0;z-index:99999;' +
     'display:flex;align-items:center;height:' + BAR_H + 'px;padding:0 2px;' +
     'background:#1a1a1a;border-top:1px solid #333;gap:1px;' +
     'overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;' +
@@ -240,7 +240,7 @@
     '#kb-bar button.kb-active{background:#3478f6;color:#fff;}' +
     '#kb-bar button.kb-icon{font-size:16px;min-width:38px;}' +
     '#kb-bar .kb-sep{flex:1 1 0;min-width:2px;}' +
-    '#kb-hide{position:fixed;right:8px;bottom:8px;z-index:99998;' +
+    '#kb-hide{position:fixed;right:8px;z-index:99998;' +
     'display:none;width:40px;height:40px;border:0;border-radius:50%;' +
     'background:rgba(30,30,30,0.9);color:#fff;font-size:18px;' +
     'box-shadow:0 2px 8px rgba(0,0,0,0.4);touch-action:manipulation;}';
@@ -340,10 +340,12 @@
 
     if (barActive) {
       bar.style.display = 'flex';
+      bar.style.top = (h - barSize) + 'px';
       showBtn.style.display = 'none';
     } else {
       bar.style.display = 'none';
       showBtn.style.display = 'block';
+      showBtn.style.top = (h - 48) + 'px';
     }
 
     document.documentElement.style.height = h + 'px';

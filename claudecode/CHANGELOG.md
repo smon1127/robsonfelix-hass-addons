@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.79] - 2026-03-10
+
+### Fixed
+- Keybar now positions at the bottom of the terminal (not bottom of viewport)
+- Uses `top` positioning calculated from terminal height instead of `bottom:0`
+- When keyboard is open, keybar sits right above the keyboard, below the terminal
+
 ## [1.2.78] - 2026-03-10
 
 ### Fixed
