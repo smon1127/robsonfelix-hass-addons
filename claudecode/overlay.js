@@ -556,6 +556,11 @@
       e.preventDefault();
     }, { passive: false });
 
+    // Start with keyboard active and 21-row height
+    kbOpen = true;
+    hasHadInput = true;
+    var kbBtn = document.getElementById('kb-kbd');
+    if (kbBtn) kbBtn.classList.add('kb-active');
     updateLayout();
     focusTerm();
   }

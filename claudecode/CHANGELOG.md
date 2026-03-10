@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.89] - 2026-03-10
+
+### Changed
+- Terminal opens with keyboard active and 21-row height immediately (no initial 100% state)
+
 ## [1.2.88] - 2026-03-10
 
 ### Fixed
