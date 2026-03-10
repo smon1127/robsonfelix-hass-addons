@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.80] - 2026-03-10
+
+### Changed
+- Keyboard toggle (⌨) now shows/hides iOS keyboard (blue when open)
+- Removed hide-bar button — floating keybar is always visible
+- Removed `/` button
+- Bigger thumb-friendly buttons: 38px tall, 44px min-width, 15px font
+- Bar height increased to 44px
+
+### Added
+- Resize handle (↕) button — touch and drag up/down to adjust terminal height
+- Custom height resets when keyboard opens/closes or viewport changes
+
 ## [1.2.79] - 2026-03-10
 
 ### Fixed

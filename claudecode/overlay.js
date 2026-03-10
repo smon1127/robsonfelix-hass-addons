@@ -13,9 +13,8 @@
   };
 
   var ctrlActive = false;
-  var barHidden = false;
   var selMode = false;
-  var BAR_H = 36;
+  var BAR_H = 44;
 
   function getTextarea() {
     return document.querySelector('.xterm-helper-textarea');
@@ -26,10 +25,18 @@
     if (ta) ta.focus({ preventScroll: true });
   }
 
-  function blurTerm() {
+  function toggleKeyboard() {
     var ta = getTextarea();
-    if (ta) ta.blur();
-    kbOpen = false;
+    if (!ta) return;
+    if (kbOpen) {
+      ta.blur();
+      kbOpen = false;
+    } else {
+      ta.focus({ preventScroll: true });
+      kbOpen = true;
+    }
+    var btn = document.getElementById('kb-kbd');
+    if (btn) btn.classList.toggle('kb-active', kbOpen);
     setTimeout(updateLayout, 300);
   }
 
@@ -221,38 +228,60 @@
     showToast._t = setTimeout(function () { el.style.opacity = '0'; }, 1200);
   }
 
+  // -- Resize handle --
+  var customH = 0; // 0 = auto, >0 = user-set height
+
+  function onResizeTouchStart(e) {
+    e.preventDefault();
+    var startY = e.touches[0].clientY;
+    var startH = customH || getCurrentTermH();
+
+    function onMove(ev) {
+      ev.preventDefault();
+      var dy = ev.touches[0].clientY - startY;
+      var newH = Math.max(100, Math.min(startH - dy, fullH - BAR_H));
+      customH = newH;
+      setHeight(newH + BAR_H);
+    }
+    function onEnd() {
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
+    }
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onEnd);
+  }
+
+  function getCurrentTermH() {
+    var xterm = document.querySelector('.xterm');
+    if (xterm) return xterm.getBoundingClientRect().height;
+    return window.innerHeight - BAR_H;
+  }
+
   // -- CSS --
   var css = document.createElement('style');
   css.textContent =
     'html,body{margin:0;padding:0;overflow:hidden !important;height:100vh;height:100dvh;}' +
     '#kb-bar{position:fixed;left:0;right:0;z-index:99999;' +
-    'display:flex;align-items:center;height:' + BAR_H + 'px;padding:0 2px;' +
-    'background:#1a1a1a;border-top:1px solid #333;gap:1px;' +
+    'display:flex;align-items:center;height:' + BAR_H + 'px;padding:0 3px;' +
+    'background:#1a1a1a;border-top:1px solid #333;gap:2px;' +
     'overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;' +
     'user-select:none;-webkit-user-select:none;font-family:-apple-system,system-ui,sans-serif;}' +
     '#kb-bar::-webkit-scrollbar{display:none;}' +
     '#kb-bar{scrollbar-width:none;-ms-overflow-style:none;}' +
-    '#kb-bar button{flex:0 0 auto;white-space:nowrap;height:30px;min-width:36px;padding:0 8px;margin:0;' +
-    'border:0;border-radius:5px;background:#2d2d2d;color:#e0e0e0;' +
-    'font-size:13px;font-weight:500;line-height:30px;text-align:center;' +
+    '#kb-bar button{flex:0 0 auto;white-space:nowrap;height:38px;min-width:44px;padding:0 12px;margin:0;' +
+    'border:0;border-radius:6px;background:#2d2d2d;color:#e0e0e0;' +
+    'font-size:15px;font-weight:500;line-height:38px;text-align:center;' +
     'touch-action:manipulation;-webkit-tap-highlight-color:transparent;}' +
     '#kb-bar button.kb-flash{background:#555;color:#fff;transition:none;}' +
     '#kb-bar button.kb-active{background:#3478f6;color:#fff;}' +
-    '#kb-bar button.kb-icon{font-size:16px;min-width:38px;}' +
-    '#kb-bar .kb-sep{flex:1 1 0;min-width:2px;}' +
-    '#kb-hide{position:fixed;right:8px;z-index:99998;' +
-    'display:none;width:40px;height:40px;border:0;border-radius:50%;' +
-    'background:rgba(30,30,30,0.9);color:#fff;font-size:18px;' +
-    'box-shadow:0 2px 8px rgba(0,0,0,0.4);touch-action:manipulation;}';
+    '#kb-bar button.kb-icon{font-size:18px;min-width:44px;padding:0 10px;}' +
+    '#kb-bar button.kb-resize{cursor:ns-resize;font-size:18px;min-width:44px;padding:0 10px;' +
+    'background:#333;touch-action:none;}';
   document.head.appendChild(css);
 
   // -- Bar --
   var bar = document.createElement('div');
   bar.id = 'kb-bar';
-
-  var showBtn = document.createElement('button');
-  showBtn.id = 'kb-hide';
-  showBtn.textContent = '\u2328';
 
   function flash(btn) {
     btn.classList.add('kb-flash');
@@ -275,17 +304,10 @@
     return b;
   }
 
-  function mkSep() {
-    var s = document.createElement('span');
-    s.className = 'kb-sep';
-    return s;
-  }
-
   // Buttons
   bar.appendChild(mkBtn('ctrl', toggleCtrl, { id: 'kb-ctrl', toggle: true }));
   bar.appendChild(mkBtn('esc', function () { sendSeq('Escape'); }));
   bar.appendChild(mkBtn('tab', function () { sendSeq('Tab'); }));
-  bar.appendChild(mkBtn('/', function () { sendData('/'); clearCtrl(); }));
   bar.appendChild(mkBtn('opt', toggleOpt, { id: 'kb-opt', toggle: true }));
   bar.appendChild(mkBtn('sel', function () { selMode ? disableSelMode() : enableSelMode(); }, { id: 'kb-sel', toggle: true, norefocus: true }));
   var cpBtn = mkBtn('cp', copySelection, { id: 'kb-copy' });
@@ -302,17 +324,12 @@
   bar.appendChild(mkBtn('\u25B6', function () { sendSeq('ArrowRight'); }, { cls: 'kb-icon' }));
   bar.appendChild(mkBtn('\u25B2', function () { sendSeq('ArrowUp'); }, { cls: 'kb-icon' }));
   bar.appendChild(mkBtn('\u25BC', function () { sendSeq('ArrowDown'); }, { cls: 'kb-icon' }));
-  bar.appendChild(mkBtn('\u2B07', function () { blurTerm(); }, { cls: 'kb-icon', norefocus: true }));
-  bar.appendChild(mkBtn('\u2328', function () {
-    barHidden = true;
-    updateLayout();
-  }, { cls: 'kb-icon' }));
-
-  showBtn.addEventListener('click', function () {
-    barHidden = false;
-    updateLayout();
-    focusTerm();
-  });
+  // Keyboard toggle
+  bar.appendChild(mkBtn('\u2328', toggleKeyboard, { id: 'kb-kbd', cls: 'kb-icon', toggle: true, norefocus: true }));
+  // Resize handle — drag up/down to adjust terminal height
+  var resizeBtn = mkBtn('\u2195', function () {}, { cls: 'kb-resize' });
+  resizeBtn.addEventListener('touchstart', onResizeTouchStart, { passive: false });
+  bar.appendChild(resizeBtn);
 
   // -- Layout engine --
   var kbOpen = false;
@@ -334,19 +351,10 @@
   }
 
   function setHeight(h) {
-    var barActive = !barHidden;
-    var barSize = barActive ? BAR_H : 0;
-    var termH = h - barSize;
+    var termH = h - BAR_H;
 
-    if (barActive) {
-      bar.style.display = 'flex';
-      bar.style.top = (h - barSize) + 'px';
-      showBtn.style.display = 'none';
-    } else {
-      bar.style.display = 'none';
-      showBtn.style.display = 'block';
-      showBtn.style.top = (h - 48) + 'px';
-    }
+    bar.style.display = 'flex';
+    bar.style.top = (termH) + 'px';
 
     document.documentElement.style.height = h + 'px';
     document.body.style.height = h + 'px';
@@ -375,27 +383,27 @@
   }
 
   function updateLayout() {
-    // Try to detect actual visible height
+    // If user set a custom height via resize handle, use that
+    if (customH > 0) {
+      setHeight(customH + BAR_H);
+      return;
+    }
+
     var vv = window.visualViewport;
     var visH = vv ? Math.round(vv.height) : window.innerHeight;
-
-    // Update full height when it grows (keyboard closed)
     if (visH > fullH) fullH = visH;
 
-    // Detect keyboard: if visualViewport is significantly smaller than full height
     var kbDetected = (fullH - visH) > 100;
 
     if (kbOpen || kbDetected) {
-      // Keyboard is open — use detected height, or 45% of full height as fallback
       var h = kbDetected ? visH : Math.round(fullH * 0.45);
       setHeight(h);
     } else {
-      // Keyboard closed — full height
       setHeight(fullH);
     }
   }
 
-  // Suppress iOS autocorrect and form accessory bar
+  // Suppress iOS autocorrect
   function patchTextarea(ta) {
     if (!ta) return;
     ta.setAttribute('autocomplete', 'off');
@@ -408,7 +416,6 @@
 
   function init() {
     document.body.appendChild(bar);
-    document.body.appendChild(showBtn);
 
     var ta = getTextarea();
     patchTextarea(ta);
@@ -423,22 +430,35 @@
       obs.observe(document.body, { childList: true, subtree: true });
     }
 
-    // Listen for size changes from all possible sources
     if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', updateLayout);
+      window.visualViewport.addEventListener('resize', function () {
+        customH = 0; // reset custom height on viewport change
+        updateLayout();
+      });
     }
-    window.addEventListener('resize', updateLayout);
+    window.addEventListener('resize', function () {
+      var h = window.innerHeight;
+      if (h > fullH) fullH = h;
+      customH = 0;
+      updateLayout();
+    });
 
-    // Track keyboard state via focus/blur on the textarea
+    // Track keyboard state via focus/blur
     document.addEventListener('focusin', function (e) {
       if (e.target && e.target.classList && e.target.classList.contains('xterm-helper-textarea')) {
         kbOpen = true;
+        var btn = document.getElementById('kb-kbd');
+        if (btn) btn.classList.add('kb-active');
+        customH = 0;
         setTimeout(updateLayout, 300);
       }
     });
     document.addEventListener('focusout', function (e) {
       if (e.target && e.target.classList && e.target.classList.contains('xterm-helper-textarea')) {
         kbOpen = false;
+        var btn = document.getElementById('kb-kbd');
+        if (btn) btn.classList.remove('kb-active');
+        customH = 0;
         setTimeout(updateLayout, 300);
       }
     });
