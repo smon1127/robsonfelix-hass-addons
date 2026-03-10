@@ -366,6 +366,8 @@
     e.preventDefault();
     var startY = e.touches[0].clientY;
     var startBarTop = bar.getBoundingClientRect().top;
+    var btn = document.getElementById('kb-resize');
+    if (btn) btn.classList.add('kb-active');
 
     function onMove(ev) {
       ev.preventDefault();
@@ -375,6 +377,7 @@
       setHeight(newTermH + BAR_H);
     }
     function onEnd() {
+      if (btn) btn.classList.remove('kb-active');
       document.removeEventListener('touchmove', onMove);
       document.removeEventListener('touchend', onEnd);
     }
@@ -462,7 +465,8 @@
     return b;
   }
 
-  // Buttons — arrows, sel, paste (left), then modifiers, then utility (right)
+  // Buttons — esc first, arrows, sel, paste, resize (left), then modifiers, then utility (right)
+  bar.appendChild(mkBtn('esc', function () { sendSeq('Escape'); }));
   bar.appendChild(mkBtn('<i class="fa-solid fa-caret-left"></i>', function () { sendSeq('ArrowLeft'); }, { cls: 'kb-icon', html: true }));
   bar.appendChild(mkBtn('<i class="fa-solid fa-caret-right"></i>', function () { sendSeq('ArrowRight'); }, { cls: 'kb-icon', html: true }));
   bar.appendChild(mkBtn('<i class="fa-solid fa-caret-up"></i>', function () { sendSeq('ArrowUp'); }, { cls: 'kb-icon', html: true }));
@@ -480,12 +484,11 @@
       fallbackPaste();
     }
   }, { cls: 'kb-icon', html: true }));
-  // Resize handle — next to paste button
-  var resizeBtn = mkBtn('<i class="fa-solid fa-up-down"></i>', function () {}, { cls: 'kb-resize', html: true });
+  // Resize handle — next to paste button, highlights while dragging
+  var resizeBtn = mkBtn('<i class="fa-solid fa-up-down"></i>', function () {}, { id: 'kb-resize', cls: 'kb-resize', html: true });
   resizeBtn.addEventListener('touchstart', onResizeTouchStart, { passive: false });
   bar.appendChild(resizeBtn);
   bar.appendChild(mkBtn('ctrl', toggleCtrl, { id: 'kb-ctrl', toggle: true }));
-  bar.appendChild(mkBtn('esc', function () { sendSeq('Escape'); }));
   bar.appendChild(mkBtn('tab', function () { sendSeq('Tab'); }));
   bar.appendChild(mkBtn('opt', toggleOpt, { id: 'kb-opt', toggle: true }));
   // Keyboard toggle

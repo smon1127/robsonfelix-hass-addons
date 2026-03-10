@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.93] - 2026-03-10
+
+### Changed
+- Moved esc button to the far left of the keybar
+- Resize handle highlights blue (kb-active) while dragging, deactivates on release
+
 ## [1.2.92] - 2026-03-10
 
 ### Added
