@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.3] - 2026-03-10
+
+### Changed
+- Default working_directory back to /homeassistant (container root has no useful HA files)
+
 ## [1.4.2] - 2026-03-10
 
 ### Fixed
