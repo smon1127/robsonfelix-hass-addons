@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.97] - 2026-03-10
+
+### Fixed
+- Terminal now fits full width: reserves 10px on right for scrollbar, fit addon calculates correct columns
+- Width constraints applied to all parent elements so no content is clipped
+
+### Changed
+- Tmux history-limit increased to 50,000 lines (from default 2,000)
+- On reconnect, last 2,000 lines of tmux scrollback are dumped into terminal so history is visible
+- Tmux status bar disabled for cleaner look
+
 ## [1.2.96] - 2026-03-10
 
 ### Fixed
