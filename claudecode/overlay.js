@@ -83,7 +83,7 @@
     'border:0;border-radius:5px;background:#2d2d2d;color:#e0e0e0;' +
     'font-size:13px;font-weight:500;line-height:30px;text-align:center;' +
     'touch-action:manipulation;-webkit-tap-highlight-color:transparent;}' +
-    '#kb-bar button:active{background:#444;}' +
+    '#kb-bar button.kb-flash{background:#555;color:#fff;transition:none;}' +
     '#kb-bar button.kb-active{background:#3478f6;color:#fff;}' +
     '#kb-bar button.kb-icon{font-size:16px;min-width:38px;}' +
     '#kb-bar .kb-sep{flex:1 1 0;min-width:2px;}' +
@@ -102,14 +102,21 @@
   showBtn.id = 'kb-hide';
   showBtn.textContent = '\u2328';
 
+  function flash(btn) {
+    btn.classList.add('kb-flash');
+    setTimeout(function () { btn.classList.remove('kb-flash'); }, 120);
+  }
+
   function mkBtn(label, handler, opts) {
     var b = document.createElement('button');
     b.type = 'button';
     if (opts && opts.id) b.id = opts.id;
     if (opts && opts.cls) b.className = opts.cls;
     b.textContent = label;
+    var isToggle = opts && opts.toggle;
     b.addEventListener('click', function (e) {
       e.preventDefault();
+      if (!isToggle) flash(b);
       handler();
       focusTerm();
     });
@@ -123,7 +130,7 @@
   }
 
   // Buttons matching Shellfish layout: fn/ctrl, esc, tab, ^, pipe, clipboard, arrows, keyboard
-  bar.appendChild(mkBtn('ctrl', toggleCtrl, { id: 'kb-ctrl' }));
+  bar.appendChild(mkBtn('ctrl', toggleCtrl, { id: 'kb-ctrl', toggle: true }));
   bar.appendChild(mkBtn('esc', function () { sendSeq('Escape'); }));
   bar.appendChild(mkBtn('tab', function () { sendSeq('Tab'); }));
   bar.appendChild(mkBtn('|', function () { sendData('|'); clearCtrl(); }));

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.69] - 2026-03-10
+
+### Added
+- Momentary flash feedback on keybar button press (120ms highlight)
+- Ctrl button excluded from flash since it has its own toggle state indicator
+
 ## [1.2.68] - 2026-03-10
 
 ### Fixed
