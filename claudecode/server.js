@@ -19,8 +19,11 @@ const server = http.createServer((req, res) => {
   }
 
   // Proxy HTTP to ttyd, inject script tag on HTML responses
+  // Remove accept-encoding so ttyd returns uncompressed HTML (avoids gzip handling)
+  const fwdHeaders = { ...req.headers };
+  delete fwdHeaders['accept-encoding'];
   const proxyReq = http.request(
-    { host: TTYD_HOST, port: TTYD_PORT, path: req.url, method: req.method, headers: req.headers },
+    { host: TTYD_HOST, port: TTYD_PORT, path: req.url, method: req.method, headers: fwdHeaders },
     (proxyRes) => {
       const ct = String(proxyRes.headers['content-type'] || '');
       if (!ct.includes('text/html')) {
@@ -36,7 +39,6 @@ const server = http.createServer((req, res) => {
         html = html.replace('</body>', '<script src="overlay.js"></script></body>');
         const headers = { ...proxyRes.headers };
         delete headers['content-length'];
-        delete headers['content-encoding'];
         res.writeHead(proxyRes.statusCode, headers);
         res.end(html);
       });

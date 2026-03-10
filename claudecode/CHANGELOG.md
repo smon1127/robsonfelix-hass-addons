@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.68] - 2026-03-10
+
+### Fixed
+- Garbled binary symbols on terminal screen caused by gzip-compressed HTML
+- Proxy now strips `accept-encoding` from forwarded requests so ttyd returns uncompressed HTML
+- Script tag injection now works correctly on plain-text HTML responses
+
 ## [1.2.67] - 2026-03-10
 
 ### Added
