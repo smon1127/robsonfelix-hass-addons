@@ -10,10 +10,10 @@ const overlayPath = path.join(__dirname, 'overlay.js');
 const SUPERVISOR_TOKEN = process.env.SUPERVISOR_TOKEN || '';
 
 // Helper: call Supervisor API
-function supervisorAPI(method, path, body) {
+function supervisorAPI(method, apiPath, body) {
   return new Promise((resolve, reject) => {
     const opts = {
-      host: 'supervisor', port: 80, path, method,
+      host: 'supervisor', port: 80, path: apiPath, method,
       headers: {
         'Authorization': 'Bearer ' + SUPERVISOR_TOKEN,
         'Content-Type': 'application/json',
@@ -23,11 +23,16 @@ function supervisorAPI(method, path, body) {
       const chunks = [];
       res.on('data', (c) => chunks.push(c));
       res.on('end', () => {
-        try { resolve(JSON.parse(Buffer.concat(chunks).toString())); }
+        const raw = Buffer.concat(chunks).toString();
+        console.log('[API] ' + method + ' ' + apiPath + ' -> ' + res.statusCode + ': ' + raw.substring(0, 200));
+        try { resolve(JSON.parse(raw)); }
         catch (e) { resolve({ result: 'ok' }); }
       });
     });
-    req.on('error', reject);
+    req.on('error', (err) => {
+      console.log('[API] ' + method + ' ' + apiPath + ' ERROR: ' + err.message);
+      reject(err);
+    });
     if (body) req.write(JSON.stringify(body));
     req.end();
   });
@@ -39,8 +44,8 @@ const server = http.createServer((req, res) => {
     res.setHeader('Content-Type', 'application/json');
     (async () => {
       try {
-        // 1. Refresh store
-        await supervisorAPI('POST', '/store/refresh');
+        // 1. Refresh store (reload repositories)
+        await supervisorAPI('POST', '/store/reload');
         // 2. Check current add-on info
         const info = await supervisorAPI('GET', '/addons/self/info');
         const current = info.data && info.data.version;

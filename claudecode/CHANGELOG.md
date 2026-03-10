@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.83] - 2026-03-10
+
+### Fixed
+- Update button: fixed Supervisor API path `/store/refresh` → `/store/reload`
+- Added debug logging for all Supervisor API calls (visible in add-on log)
+
 ## [1.2.82] - 2026-03-10
 
 ### Fixed
