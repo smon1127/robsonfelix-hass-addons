@@ -146,18 +146,10 @@ else
   SHELL_CMD='bash --login'
 fi
 
-ttyd --port 7682 --writable --ping-interval 30 --max-clients 5 \
+cd /homeassistant
+exec ttyd --port 7681 --writable --ping-interval 30 --max-clients 5 \
   -t fontSize="$FONT_SIZE" \
   -t fontFamily=Monaco,Consolas,monospace \
   -t scrollback=20000 \
   -t "theme=$COLORS" \
-  $SHELL_CMD &
-
-TTYD_PID=$!
-cleanup() {
-  kill "$TTYD_PID" 2>/dev/null || true
-}
-trap cleanup EXIT INT TERM
-
-cd /opt/claudecode-proxy
-exec node /opt/claudecode-proxy/server.js
+  $SHELL_CMD

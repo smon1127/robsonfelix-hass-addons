@@ -9,8 +9,7 @@ LABEL org.opencontainers.image.licenses="MIT"
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    TERM=xterm-256color \
-    NODE_PATH=/opt/claudecode-proxy/node_modules
+    TERM=xterm-256color
 
 RUN apk add --no-cache \
     bash \
@@ -52,11 +51,6 @@ RUN case "${BUILD_ARCH}" in \
  && chmod +x /usr/bin/ttyd
 
 RUN npm install -g @anthropic-ai/claude-code
-
-RUN mkdir -p /opt/claudecode-proxy \
- && cd /opt/claudecode-proxy \
- && npm init -y \
- && npm install --omit=dev http-proxy
 
 RUN pip3 install --no-cache-dir --break-system-packages hass-mcp pymodbus pyserial
 
@@ -120,11 +114,8 @@ EOF
 
 RUN echo 'source ~/.bashrc' > /root/.profile
 
-COPY server.js /opt/claudecode-proxy/server.js
-COPY overlay.js /opt/claudecode-proxy/overlay.js
 COPY start.sh /usr/local/bin/start-claudecode.sh
-RUN chmod +x /usr/local/bin/start-claudecode.sh \
- && chmod 644 /opt/claudecode-proxy/server.js /opt/claudecode-proxy/overlay.js
+RUN chmod +x /usr/local/bin/start-claudecode.sh
 
 ENV PATH="/root/.local/bin:${PATH}"
 WORKDIR /homeassistant

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.66] - 2026-03-10
+
+### Fixed
+- Reverted proxy architecture: ttyd serves directly on port 7681 again
+- Proxy (server.js) was breaking WebSocket connections, causing blank terminal
+- Removed http-proxy dependency and NODE_PATH from Dockerfile
+
 ## [1.2.65] - 2026-03-10
 
 ### Fixed
