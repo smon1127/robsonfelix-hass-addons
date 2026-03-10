@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.75] - 2026-03-10
+
+### Changed
+- Keybar is now horizontally scrollable (swipe left/right to see all buttons)
+- Removed `|` (pipe) button and spacer separators to save space
+- Hidden scrollbar for clean appearance
+
 ## [1.2.74] - 2026-03-10
 
 ### Fixed

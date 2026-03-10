@@ -206,8 +206,11 @@
     '#kb-bar{position:fixed;left:0;right:0;bottom:0;z-index:99999;' +
     'display:flex;align-items:center;height:' + BAR_H + 'px;padding:0 2px;' +
     'background:#1a1a1a;border-top:1px solid #333;gap:1px;' +
+    'overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;' +
     'user-select:none;-webkit-user-select:none;font-family:-apple-system,system-ui,sans-serif;}' +
-    '#kb-bar button{flex:0 0 auto;height:30px;min-width:36px;padding:0 8px;margin:0;' +
+    '#kb-bar::-webkit-scrollbar{display:none;}' +
+    '#kb-bar{scrollbar-width:none;-ms-overflow-style:none;}' +
+    '#kb-bar button{flex:0 0 auto;white-space:nowrap;height:30px;min-width:36px;padding:0 8px;margin:0;' +
     'border:0;border-radius:5px;background:#2d2d2d;color:#e0e0e0;' +
     'font-size:13px;font-weight:500;line-height:30px;text-align:center;' +
     'touch-action:manipulation;-webkit-tap-highlight-color:transparent;}' +
@@ -260,19 +263,16 @@
   bar.appendChild(mkBtn('ctrl', toggleCtrl, { id: 'kb-ctrl', toggle: true }));
   bar.appendChild(mkBtn('esc', function () { sendSeq('Escape'); }));
   bar.appendChild(mkBtn('tab', function () { sendSeq('Tab'); }));
-  bar.appendChild(mkBtn('|', function () { sendData('|'); clearCtrl(); }));
   bar.appendChild(mkBtn('-', function () { sendData('-'); clearCtrl(); }));
   bar.appendChild(mkBtn('/', function () { sendData('/'); clearCtrl(); }));
   bar.appendChild(mkBtn('sel', function () { selMode ? disableSelMode() : enableSelMode(); }, { id: 'kb-sel', toggle: true, norefocus: true }));
   var cpBtn = mkBtn('cp', copySelection, { id: 'kb-copy' });
   cpBtn.style.display = 'none';
   bar.appendChild(cpBtn);
-  bar.appendChild(mkSep());
   bar.appendChild(mkBtn('\u25C0', function () { sendSeq('ArrowLeft'); }, { cls: 'kb-icon' }));
   bar.appendChild(mkBtn('\u25B6', function () { sendSeq('ArrowRight'); }, { cls: 'kb-icon' }));
   bar.appendChild(mkBtn('\u25B2', function () { sendSeq('ArrowUp'); }, { cls: 'kb-icon' }));
   bar.appendChild(mkBtn('\u25BC', function () { sendSeq('ArrowDown'); }, { cls: 'kb-icon' }));
-  bar.appendChild(mkSep());
   bar.appendChild(mkBtn('\u2B07', function () { blurTerm(); }, { cls: 'kb-icon', norefocus: true }));
   bar.appendChild(mkBtn('\u2328', function () {
     barHidden = true;
