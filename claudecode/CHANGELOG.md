@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.88] - 2026-03-10
+
+### Fixed
+- Initial terminal height is now 100% (full screen); switches to 21 rows after first keyboard input
+- After keyboard closes, terminal stays at 21-row height instead of going back to 100%
+- Keyboard hide: new approach using inputmode=none + bar.focus() to dismiss iOS keyboard
+
+### Changed
+- Styled ttyd overlay messages (e.g. "Press Enter to Reconnect") with modern font, blur backdrop, rounded corners
+- Added Font Awesome icons to ttyd overlays: reconnect (rotate), disconnect (link-slash), connect (plug)
+
 ## [1.2.87] - 2026-03-10
 
 ### Fixed

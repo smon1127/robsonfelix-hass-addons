@@ -25,30 +25,21 @@
     if (ta) ta.focus({ preventScroll: true });
   }
 
-  // Hidden dummy input used to steal focus and dismiss iOS keyboard
-  var _dummyInput = null;
-  function getDummyInput() {
-    if (!_dummyInput) {
-      _dummyInput = document.createElement('input');
-      _dummyInput.setAttribute('readonly', 'true');
-      _dummyInput.style.cssText = 'position:fixed;left:-9999px;top:0;width:0;height:0;opacity:0;pointer-events:none;';
-      document.body.appendChild(_dummyInput);
-    }
-    return _dummyInput;
-  }
-
   function toggleKeyboard() {
     var ta = getTextarea();
     if (!ta) return;
     if (kbOpen) {
-      // On iOS WKWebView, ta.blur() alone doesn't dismiss the keyboard.
-      // Focus a readonly dummy input first, then blur it — this forces iOS to close the keyboard.
-      var dummy = getDummyInput();
-      dummy.focus();
-      dummy.blur();
+      // iOS WKWebView won't dismiss keyboard on blur() alone.
+      // Set inputmode=none to tell iOS no keyboard is needed, then blur.
+      ta.setAttribute('inputmode', 'none');
       ta.blur();
+      // Also try: move focus to a non-input element
+      bar.focus();
       kbOpen = false;
+      // Restore inputmode after keyboard is dismissed
+      setTimeout(function () { ta.setAttribute('inputmode', 'text'); }, 500);
     } else {
+      ta.setAttribute('inputmode', 'text');
       ta.focus({ preventScroll: true });
       kbOpen = true;
     }
@@ -317,7 +308,14 @@
     '#kb-bar button.kb-icon{font-size:16px;min-width:44px;padding:0 10px;}' +
     '#kb-bar button.kb-icon i{pointer-events:none;}' +
     '#kb-bar button.kb-resize{cursor:ns-resize;font-size:16px;min-width:44px;padding:0 10px;' +
-    'background:#333;touch-action:none;}';
+    'background:#333;touch-action:none;}' +
+    // Style ttyd overlay messages (e.g. "Press Enter to Reconnect")
+    '.xterm .xterm-overlay{font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif !important;' +
+    'font-size:15px !important;font-weight:500 !important;letter-spacing:0.3px !important;' +
+    'background:rgba(30,30,30,0.92) !important;color:#e0e0e0 !important;' +
+    'border:1px solid rgba(255,255,255,0.1) !important;border-radius:12px !important;' +
+    'padding:14px 24px !important;backdrop-filter:blur(8px) !important;' +
+    '-webkit-backdrop-filter:blur(8px) !important;box-shadow:0 4px 24px rgba(0,0,0,0.4) !important;}';
   document.head.appendChild(css);
 
   // Load Font Awesome 6 for icons
@@ -330,6 +328,8 @@
   // -- Bar --
   var bar = document.createElement('div');
   bar.id = 'kb-bar';
+  bar.tabIndex = -1; // make focusable for keyboard dismiss trick
+  bar.style.outline = 'none';
 
   function flash(btn) {
     btn.classList.add('kb-flash');
@@ -383,6 +383,7 @@
 
   // -- Layout engine --
   var kbOpen = false;
+  var hasHadInput = false; // true after first keyboard open; starts at 100% until then
   var fullH = window.innerHeight;
 
   function fitTerminal() {
@@ -432,6 +433,12 @@
     setHeight._t = setTimeout(fitTerminal, 50);
   }
 
+  function getDefaultKbHeight() {
+    var dims = getCellDims();
+    var rowH = dims ? dims.h : 18;
+    return Math.round(21 * rowH) + BAR_H;
+  }
+
   function updateLayout() {
     // If user set a custom height via resize handle, use that
     if (customH > 0) {
@@ -446,17 +453,15 @@
     var kbDetected = (fullH - visH) > 100;
 
     if (kbOpen || kbDetected) {
+      hasHadInput = true;
       // If viewport detects keyboard, use that height; otherwise target 21 terminal rows
-      var h;
-      if (kbDetected) {
-        h = visH;
-      } else {
-        var dims = getCellDims();
-        var rowH = dims ? dims.h : 18;
-        h = Math.round(21 * rowH) + BAR_H;
-      }
+      var h = kbDetected ? visH : getDefaultKbHeight();
       setHeight(h);
+    } else if (hasHadInput) {
+      // After keyboard was used at least once, keep 21-row default
+      setHeight(getDefaultKbHeight());
     } else {
+      // Initial state: full height until first keyboard interaction
       setHeight(fullH);
     }
   }
@@ -514,6 +519,31 @@
         setTimeout(updateLayout, 300);
       }
     });
+
+    // Restyle ttyd overlay messages with FA icons
+    var overlayObs = new MutationObserver(function (mutations) {
+      mutations.forEach(function (m) {
+        m.addedNodes.forEach(function (node) {
+          if (node.nodeType !== 1) return;
+          var overlays = [];
+          if (node.classList && node.classList.contains('xterm-overlay')) overlays.push(node);
+          else if (node.querySelectorAll) overlays = node.querySelectorAll('.xterm-overlay');
+          overlays.forEach(function (ov) {
+            if (ov._styled) return;
+            ov._styled = true;
+            var text = ov.textContent || '';
+            if (/reconnect/i.test(text)) {
+              ov.innerHTML = '<i class="fa-solid fa-rotate-right" style="margin-right:8px;color:#3478f6;"></i>' + text;
+            } else if (/disconnect/i.test(text)) {
+              ov.innerHTML = '<i class="fa-solid fa-link-slash" style="margin-right:8px;color:#ff6b6b;"></i>' + text;
+            } else if (/connect/i.test(text)) {
+              ov.innerHTML = '<i class="fa-solid fa-plug" style="margin-right:8px;color:#4cd964;"></i>' + text;
+            }
+          });
+        });
+      });
+    });
+    overlayObs.observe(document.body, { childList: true, subtree: true });
 
     // Prevent iframe/page scrolling — only allow scrolling inside terminal and keybar
     document.addEventListener('touchmove', function (e) {
