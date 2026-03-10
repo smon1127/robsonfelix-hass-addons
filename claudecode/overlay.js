@@ -766,12 +766,9 @@
     var visH = vv ? Math.round(vv.height) : window.innerHeight;
     if (visH > fullH) fullH = visH;
 
-    var kbDetected = (fullH - visH) > 100;
-
-    if (kbOpen || kbDetected) {
-      // Keyboard open: snap to 21 rows (or viewport height if keyboard detected)
-      var h = kbDetected ? visH : getDefaultKbHeight();
-      setHeight(h);
+    if (kbOpen) {
+      // Keyboard open: always 21 rows
+      setHeight(getDefaultKbHeight());
     } else {
       // Keyboard closed: full height
       setHeight(fullH);
@@ -884,23 +881,20 @@
     // Start at full height; snaps to 21 rows when keyboard opens via focusin
     updateLayout();
 
-    // iOS requires a user gesture to show keyboard in WKWebView.
-    // Try programmatic focus first (works on some devices), then
-    // add a one-time touch listener as fallback for iOS.
-    focusTerm();
-    // Retry focus after textarea might appear (ttyd loads async)
-    setTimeout(focusTerm, 500);
-    setTimeout(focusTerm, 1500);
-
-    // Fallback: first touch anywhere activates the keyboard
+    // First touch anywhere: activate keyboard and snap to 21 rows
     function onFirstTouch(e) {
-      // Don't steal focus from keybar buttons
       var el = e.target;
       while (el) {
         if (el.id === 'kb-bar') return;
         el = el.parentElement;
       }
+      kbOpen = true;
+      var btn = document.getElementById('kb-kbd');
+      if (btn) btn.classList.add('kb-active');
       focusTerm();
+      updateLayout();
+      setTimeout(updateLayout, 300);
+      setTimeout(updateLayout, 600);
       document.removeEventListener('touchstart', onFirstTouch, true);
     }
     document.addEventListener('touchstart', onFirstTouch, true);

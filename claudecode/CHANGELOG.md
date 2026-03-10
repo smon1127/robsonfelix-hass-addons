@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2026-03-10
+
+### Fixed
+- Fix first-tap snap: removed premature programmatic focus that stole focusin
+- First touch on terminal now always sets kbOpen + snaps to 21 rows immediately
+- Always use 21-row calculation (not viewport height) when keyboard is open
+- Keyboard closed → 100% full height reliably
+
 ## [1.3.9] - 2026-03-10
 
 ### Fixed
