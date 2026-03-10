@@ -848,10 +848,29 @@
         hasHadInput = true;
         var btn = document.getElementById('kb-kbd');
         if (btn) btn.classList.add('kb-active');
-        // Delay to let iOS keyboard animate and cell dims stabilize
+        // Snap to 21 rows immediately, then refine after keyboard animates
+        updateLayout();
         setTimeout(updateLayout, 300);
-        // Second pass ensures accurate 21-row height after fit completes
         setTimeout(updateLayout, 600);
+      }
+    });
+    // Also snap to 21 rows on any tap on terminal area (catches cases where
+    // focusin doesn't fire, e.g. textarea already focused but page was at 100%)
+    document.addEventListener('touchstart', function snapOn21(e) {
+      if (hasHadInput) return; // already snapped
+      var el = e.target;
+      while (el && el !== document.body) {
+        if (el.classList && (el.classList.contains('xterm-screen') || el.classList.contains('xterm'))) {
+          hasHadInput = true;
+          kbOpen = true;
+          var btn = document.getElementById('kb-kbd');
+          if (btn) btn.classList.add('kb-active');
+          updateLayout();
+          setTimeout(updateLayout, 300);
+          return;
+        }
+        if (el.id === 'kb-bar' || el.id === 'term-scrollbar') return;
+        el = el.parentElement;
       }
     });
     document.addEventListener('focusout', function (e) {

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.99] - 2026-03-10
+
+### Fixed
+- Window snaps to 21 rows immediately on focusin (not just after delay)
+- Added touchstart listener on terminal area: tapping terminal snaps from 100% to 21 rows
+- Triple updateLayout pass (immediate + 300ms + 600ms) ensures accurate row count
+
 ## [1.2.98] - 2026-03-10
 
 ### Fixed
