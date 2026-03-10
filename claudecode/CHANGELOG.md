@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.70] - 2026-03-10
+
+### Fixed
+- Suppress iOS form accessory bar (arrows + checkmark) above keyboard
+- Set autocomplete/autocorrect/autocapitalize off on terminal textarea
+- Apply `-webkit-user-modify: read-write-plaintext-only` to hint iOS to hide toolbar
+
 ## [1.2.69] - 2026-03-10
 
 ### Added

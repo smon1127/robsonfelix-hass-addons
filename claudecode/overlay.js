@@ -155,18 +155,31 @@
     focusTerm();
   });
 
+  // Suppress iOS form accessory bar (arrows + checkmark) and autocorrect
+  function patchTextarea(ta) {
+    if (!ta) return;
+    ta.setAttribute('autocomplete', 'off');
+    ta.setAttribute('autocorrect', 'off');
+    ta.setAttribute('autocapitalize', 'none');
+    ta.setAttribute('spellcheck', 'false');
+    ta.setAttribute('enterkeyhint', '');
+    // contenteditable trick: iOS hides the form accessory bar for contenteditable
+    // We wrap with a contenteditable parent to hint iOS to skip the toolbar
+    ta.style.webkitUserModify = 'read-write-plaintext-only';
+    ta.addEventListener('keydown', onTermKeydown, true);
+  }
+
   function init() {
     document.body.appendChild(bar);
     document.body.appendChild(showBtn);
-    // Hook into terminal keydown for ctrl latch
     var ta = getTextarea();
-    if (ta) ta.addEventListener('keydown', onTermKeydown, true);
+    patchTextarea(ta);
     // Retry if textarea not ready yet
     if (!ta) {
       var obs = new MutationObserver(function () {
         var ta2 = getTextarea();
         if (ta2) {
-          ta2.addEventListener('keydown', onTermKeydown, true);
+          patchTextarea(ta2);
           obs.disconnect();
         }
       });
