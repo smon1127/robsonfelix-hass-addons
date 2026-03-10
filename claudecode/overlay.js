@@ -335,7 +335,7 @@
     return b;
   }
 
-  // Buttons — arrows and sel first (left side), then modifiers and actions
+  // Buttons — arrows, sel, paste (left), then modifiers, then utility (right)
   bar.appendChild(mkBtn('<i class="fa-solid fa-caret-left"></i>', function () { sendSeq('ArrowLeft'); }, { cls: 'kb-icon', html: true }));
   bar.appendChild(mkBtn('<i class="fa-solid fa-caret-right"></i>', function () { sendSeq('ArrowRight'); }, { cls: 'kb-icon', html: true }));
   bar.appendChild(mkBtn('<i class="fa-solid fa-caret-up"></i>', function () { sendSeq('ArrowUp'); }, { cls: 'kb-icon', html: true }));
@@ -344,12 +344,7 @@
   var cpBtn = mkBtn('<i class="fa-regular fa-copy"></i>', copySelection, { id: 'kb-copy', cls: 'kb-icon', html: true });
   cpBtn.style.display = 'none';
   bar.appendChild(cpBtn);
-  bar.appendChild(mkBtn('ctrl', toggleCtrl, { id: 'kb-ctrl', toggle: true }));
-  bar.appendChild(mkBtn('esc', function () { sendSeq('Escape'); }));
-  bar.appendChild(mkBtn('tab', function () { sendSeq('Tab'); }));
-  bar.appendChild(mkBtn('opt', toggleOpt, { id: 'kb-opt', toggle: true }));
   bar.appendChild(mkBtn('<i class="fa-solid fa-clipboard"></i>', function () {
-    // Try modern Clipboard API first (requires HTTPS/secure context)
     if (navigator.clipboard && navigator.clipboard.readText) {
       navigator.clipboard.readText().then(function (text) {
         if (text) { sendData(text); showToast('Pasted!'); }
@@ -358,32 +353,16 @@
       fallbackPaste();
     }
   }, { cls: 'kb-icon', html: true }));
+  bar.appendChild(mkBtn('ctrl', toggleCtrl, { id: 'kb-ctrl', toggle: true }));
+  bar.appendChild(mkBtn('esc', function () { sendSeq('Escape'); }));
+  bar.appendChild(mkBtn('tab', function () { sendSeq('Tab'); }));
+  bar.appendChild(mkBtn('opt', toggleOpt, { id: 'kb-opt', toggle: true }));
   // Keyboard toggle
   bar.appendChild(mkBtn('<i class="fa-regular fa-keyboard"></i>', toggleKeyboard, { id: 'kb-kbd', cls: 'kb-icon', toggle: true, norefocus: true, html: true }));
   // Resize handle — drag up/down to adjust terminal height
   var resizeBtn = mkBtn('<i class="fa-solid fa-up-down"></i>', function () {}, { cls: 'kb-resize', html: true });
   resizeBtn.addEventListener('touchstart', onResizeTouchStart, { passive: false });
   bar.appendChild(resizeBtn);
-  // Refresh repos + update add-on
-  bar.appendChild(mkBtn('<i class="fa-solid fa-rotate"></i>', function () {
-    showToast('Checking for updates...');
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/api/refresh-update');
-    xhr.onload = function () {
-      try {
-        var r = JSON.parse(xhr.responseText);
-        if (r.status === 'current') {
-          showToast('\u2713 v' + (r.version || '?') + ' is latest');
-        } else if (r.status === 'updating') {
-          showToast('\u2B06 Updating to v' + r.to + '...');
-        } else {
-          showToast(r.message || 'Error');
-        }
-      } catch (e) { showToast('Error: ' + xhr.statusText); }
-    };
-    xhr.onerror = function () { showToast('Network error'); };
-    xhr.send();
-  }, { cls: 'kb-icon', norefocus: true }));
 
   // -- Layout engine --
   var kbOpen = false;

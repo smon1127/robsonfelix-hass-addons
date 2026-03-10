@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.86] - 2026-03-10
+
+### Changed
+- Moved paste button next to sel/copy buttons (left side of keybar)
+- Removed update button and server-side update API (unreliable in HA ingress context)
+
+### Removed
+- Supervisor API helper and `/api/refresh-update` endpoint from server.js
+
 ## [1.2.85] - 2026-03-10
 
 ### Changed
