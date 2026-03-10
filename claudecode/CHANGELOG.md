@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.67] - 2026-03-10
+
+### Added
+- Shellfish-style floating keybar for touch devices (ctrl, esc, tab, |, -, /, arrows, hide)
+- Appears automatically on phones/tablets above the on-screen keyboard
+- Ctrl button latches: tap ctrl then tap a letter to send Ctrl+letter
+- Minimal raw TCP proxy replaces http-proxy library (fixes WebSocket passthrough)
+
+### Changed
+- Proxy files moved to `/opt/claudecode-overlay/` (no npm dependencies needed)
+- WebSocket connections now use raw `net.connect` TCP passthrough instead of http-proxy
+
 ## [1.2.66] - 2026-03-10
 
 ### Fixed

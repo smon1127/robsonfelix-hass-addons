@@ -114,8 +114,12 @@ EOF
 
 RUN echo 'source ~/.bashrc' > /root/.profile
 
+RUN mkdir -p /opt/claudecode-overlay
+COPY server.js /opt/claudecode-overlay/server.js
+COPY overlay.js /opt/claudecode-overlay/overlay.js
 COPY start.sh /usr/local/bin/start-claudecode.sh
-RUN chmod +x /usr/local/bin/start-claudecode.sh
+RUN chmod +x /usr/local/bin/start-claudecode.sh \
+ && chmod 644 /opt/claudecode-overlay/server.js /opt/claudecode-overlay/overlay.js
 
 ENV PATH="/root/.local/bin:${PATH}"
 WORKDIR /homeassistant

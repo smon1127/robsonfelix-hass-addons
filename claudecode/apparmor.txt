@@ -68,7 +68,7 @@ profile claudecode flags=(attach_disconnected,mediate_deleted) {
   # Node.js modules
   /usr/lib/node_modules/** ixmr,
 
-  # Claudecode proxy (server.js, overlay.js)
+  # Claudecode overlay proxy
   /opt/ r,
-  /opt/** ixmr,
+  /opt/** rixm,
 }
