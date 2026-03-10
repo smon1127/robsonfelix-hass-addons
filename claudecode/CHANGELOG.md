@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.92] - 2026-03-10
+
+### Added
+- Custom touch-optimized scrollbar on right edge of terminal
+- Thin 4-6px visual thumb with 44px wide invisible touch zone for easy thumb dragging
+- Proportional scrolling using xterm's scrollToLine API (not arrow key simulation)
+- Thumb size reflects viewport-to-scrollback ratio; auto-hides when no scrollback
+- Thumb widens and brightens while dragging for visual feedback
+- Hooks into terminal onScroll, onLineFeed, onWriteParsed for live position updates
+
 ## [1.2.91] - 2026-03-10
 
 ### Fixed

@@ -416,7 +416,16 @@
     'background:rgba(30,30,30,0.92) !important;color:#e0e0e0 !important;' +
     'border:1px solid rgba(255,255,255,0.1) !important;border-radius:12px !important;' +
     'padding:14px 24px !important;backdrop-filter:blur(8px) !important;' +
-    '-webkit-backdrop-filter:blur(8px) !important;box-shadow:0 4px 24px rgba(0,0,0,0.4) !important;}';
+    '-webkit-backdrop-filter:blur(8px) !important;box-shadow:0 4px 24px rgba(0,0,0,0.4) !important;}' +
+    // Custom scrollbar
+    '#term-scrollbar{position:fixed;right:0;top:0;width:44px;z-index:99998;pointer-events:auto;touch-action:none;}' +
+    '#term-scrollbar .sb-track{position:absolute;right:2px;top:4px;bottom:4px;width:4px;' +
+    'border-radius:2px;background:rgba(255,255,255,0.06);}' +
+    '#term-scrollbar .sb-thumb{position:absolute;right:1px;width:6px;min-height:28px;' +
+    'border-radius:3px;background:rgba(255,255,255,0.25);transition:background 0.15s,width 0.15s,right 0.15s;}' +
+    '#term-scrollbar.sb-active .sb-thumb,#term-scrollbar:active .sb-thumb{' +
+    'background:rgba(255,255,255,0.5);width:8px;right:0;}' +
+    '#term-scrollbar .sb-touch{position:absolute;right:0;top:0;bottom:0;width:44px;}';
   document.head.appendChild(css);
 
   // Load Font Awesome 6 for icons
@@ -482,6 +491,110 @@
   // Keyboard toggle
   bar.appendChild(mkBtn('<i class="fa-regular fa-keyboard"></i>', toggleKeyboard, { id: 'kb-kbd', cls: 'kb-icon', toggle: true, norefocus: true, html: true }));
 
+  // -- Custom scrollbar --
+  var sbEl = document.createElement('div');
+  sbEl.id = 'term-scrollbar';
+  sbEl.innerHTML = '<div class="sb-track"></div><div class="sb-thumb"></div><div class="sb-touch"></div>';
+  var sbThumb = sbEl.querySelector('.sb-thumb');
+  var sbTouch = sbEl.querySelector('.sb-touch');
+  var sbDragging = false;
+  var sbFadeTimer = 0;
+
+  function getScrollInfo() {
+    var t = window.term;
+    if (!t || !t.buffer || !t.buffer.active) return null;
+    var buf = t.buffer.active;
+    var totalRows = buf.baseY + t.rows;
+    var viewportY = buf.viewportY;
+    return { total: totalRows, viewport: t.rows, scrollTop: viewportY, maxScroll: buf.baseY };
+  }
+
+  function updateScrollbar() {
+    var info = getScrollInfo();
+    if (!info || info.maxScroll <= 0) {
+      sbEl.style.display = 'none';
+      return;
+    }
+    sbEl.style.display = '';
+    // Calculate thumb size and position relative to the track
+    var trackH = sbEl.offsetHeight - 8; // 4px top + 4px bottom padding
+    var thumbRatio = Math.max(0.05, info.viewport / info.total);
+    var thumbH = Math.max(28, Math.round(trackH * thumbRatio));
+    var scrollRatio = info.maxScroll > 0 ? info.scrollTop / info.maxScroll : 0;
+    var thumbTop = 4 + Math.round((trackH - thumbH) * scrollRatio);
+    sbThumb.style.height = thumbH + 'px';
+    sbThumb.style.top = thumbTop + 'px';
+  }
+
+  function scrollToRatio(ratio) {
+    var t = window.term;
+    if (!t || !t.buffer || !t.buffer.active) return;
+    var maxScroll = t.buffer.active.baseY;
+    if (maxScroll <= 0) return;
+    var line = Math.round(ratio * maxScroll);
+    t.scrollToLine(line);
+  }
+
+  function onSbTouchStart(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    sbDragging = true;
+    sbEl.classList.add('sb-active');
+    clearTimeout(sbFadeTimer);
+    onSbTouchMove(e);
+  }
+
+  function onSbTouchMove(e) {
+    if (!sbDragging) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var touch = e.touches[0];
+    var rect = sbEl.getBoundingClientRect();
+    var y = touch.clientY - rect.top - 4; // offset for track padding
+    var trackH = rect.height - 8;
+    var ratio = Math.max(0, Math.min(1, y / trackH));
+    scrollToRatio(ratio);
+    updateScrollbar();
+  }
+
+  function onSbTouchEnd(e) {
+    sbDragging = false;
+    sbEl.classList.remove('sb-active');
+    // Fade after a moment
+    sbFadeTimer = setTimeout(function () {
+      // thumb returns to normal style via CSS transition
+    }, 1000);
+  }
+
+  sbTouch.addEventListener('touchstart', onSbTouchStart, { passive: false });
+  document.addEventListener('touchmove', function (e) {
+    if (sbDragging) onSbTouchMove(e);
+  }, { passive: false });
+  document.addEventListener('touchend', function () {
+    if (sbDragging) onSbTouchEnd();
+  });
+
+  // Update scrollbar when terminal scrolls
+  function hookTermScroll() {
+    var t = window.term;
+    if (!t) return;
+    if (t._scrollbarHooked) return;
+    t._scrollbarHooked = true;
+    // onScroll fires when viewport scrolls
+    if (typeof t.onScroll === 'function') {
+      t.onScroll(updateScrollbar);
+    }
+    // Also poll on lineFeed for new content
+    if (typeof t.onLineFeed === 'function') {
+      t.onLineFeed(updateScrollbar);
+    }
+    // Update on writes
+    if (typeof t.onWriteParsed === 'function') {
+      t.onWriteParsed(updateScrollbar);
+    }
+    updateScrollbar();
+  }
+
   // -- Layout engine --
   var kbOpen = false;
   var hasHadInput = false; // true after first keyboard open; starts at 100% until then
@@ -507,6 +620,10 @@
 
     bar.style.display = 'flex';
     bar.style.top = (termH) + 'px';
+
+    // Position scrollbar to match terminal height
+    sbEl.style.top = '0px';
+    sbEl.style.height = termH + 'px';
 
     document.documentElement.style.height = h + 'px';
     document.body.style.height = h + 'px';
@@ -580,23 +697,28 @@
 
   function init() {
     document.body.appendChild(bar);
+    document.body.appendChild(sbEl);
 
     var ta = getTextarea();
     patchTextarea(ta);
     if (ta) {
       ta.focus({ preventScroll: true });
+      hookTermScroll();
     } else {
       var obs = new MutationObserver(function () {
         var ta2 = getTextarea();
         if (ta2) {
           patchTextarea(ta2);
-          // Focus immediately when textarea appears
           ta2.focus({ preventScroll: true });
+          hookTermScroll();
           obs.disconnect();
         }
       });
       obs.observe(document.body, { childList: true, subtree: true });
     }
+    // Retry hooking scrollbar (term may load after textarea)
+    setTimeout(hookTermScroll, 1000);
+    setTimeout(hookTermScroll, 3000);
 
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', updateLayout);
@@ -650,11 +772,13 @@
     });
     overlayObs.observe(document.body, { childList: true, subtree: true });
 
-    // Prevent iframe/page scrolling — only allow scrolling inside terminal and keybar
+    // Prevent iframe/page scrolling — only allow scrolling inside terminal, keybar, and scrollbar
     document.addEventListener('touchmove', function (e) {
+      if (sbDragging) return; // allow scrollbar drag
       var el = e.target;
       while (el && el !== document.body) {
-        if (el.id === 'kb-bar') return; // allow keybar horizontal scroll
+        if (el.id === 'kb-bar') return;
+        if (el.id === 'term-scrollbar') return;
         if (el.classList && (el.classList.contains('xterm-screen') || el.classList.contains('xterm'))) return;
         el = el.parentElement;
       }
