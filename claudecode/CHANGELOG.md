@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.91] - 2026-03-10
+
+### Fixed
+- Auto-activate keyboard on open: focus textarea immediately when it appears via MutationObserver
+- Retry focus at 500ms and 1500ms for async ttyd load
+- Fallback: first touch anywhere on screen activates keyboard (required by iOS user-gesture policy)
+
 ## [1.2.90] - 2026-03-10
 
 ### Added

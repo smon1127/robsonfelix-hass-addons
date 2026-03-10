@@ -583,11 +583,15 @@
 
     var ta = getTextarea();
     patchTextarea(ta);
-    if (!ta) {
+    if (ta) {
+      ta.focus({ preventScroll: true });
+    } else {
       var obs = new MutationObserver(function () {
         var ta2 = getTextarea();
         if (ta2) {
           patchTextarea(ta2);
+          // Focus immediately when textarea appears
+          ta2.focus({ preventScroll: true });
           obs.disconnect();
         }
       });
@@ -663,7 +667,27 @@
     var kbBtn = document.getElementById('kb-kbd');
     if (kbBtn) kbBtn.classList.add('kb-active');
     updateLayout();
+
+    // iOS requires a user gesture to show keyboard in WKWebView.
+    // Try programmatic focus first (works on some devices), then
+    // add a one-time touch listener as fallback for iOS.
     focusTerm();
+    // Retry focus after textarea might appear (ttyd loads async)
+    setTimeout(focusTerm, 500);
+    setTimeout(focusTerm, 1500);
+
+    // Fallback: first touch anywhere activates the keyboard
+    function onFirstTouch(e) {
+      // Don't steal focus from keybar buttons
+      var el = e.target;
+      while (el) {
+        if (el.id === 'kb-bar') return;
+        el = el.parentElement;
+      }
+      focusTerm();
+      document.removeEventListener('touchstart', onFirstTouch, true);
+    }
+    document.addEventListener('touchstart', onFirstTouch, true);
   }
 
   if (document.readyState === 'loading') {
