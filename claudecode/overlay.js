@@ -289,6 +289,13 @@
   var cpBtn = mkBtn('cp', copySelection, { id: 'kb-copy' });
   cpBtn.style.display = 'none';
   bar.appendChild(cpBtn);
+  bar.appendChild(mkBtn('paste', function () {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      navigator.clipboard.readText().then(function (text) {
+        if (text) { sendData(text); showToast('Pasted!'); }
+      }, function () { showToast('Clipboard denied'); });
+    } else { showToast('Clipboard not available'); }
+  }));
   bar.appendChild(mkBtn('\u25C0', function () { sendSeq('ArrowLeft'); }, { cls: 'kb-icon' }));
   bar.appendChild(mkBtn('\u25B6', function () { sendSeq('ArrowRight'); }, { cls: 'kb-icon' }));
   bar.appendChild(mkBtn('\u25B2', function () { sendSeq('ArrowUp'); }, { cls: 'kb-icon' }));

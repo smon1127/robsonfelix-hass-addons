@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.77] - 2026-03-10
+
+### Added
+- Paste button on keybar — reads clipboard and sends text to terminal
+
 ## [1.2.76] - 2026-03-10
 
 ### Changed
