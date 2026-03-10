@@ -297,10 +297,18 @@
     'touch-action:manipulation;-webkit-tap-highlight-color:transparent;}' +
     '#kb-bar button.kb-flash{background:#555;color:#fff;transition:none;}' +
     '#kb-bar button.kb-active{background:#3478f6;color:#fff;}' +
-    '#kb-bar button.kb-icon{font-size:18px;min-width:44px;padding:0 10px;}' +
-    '#kb-bar button.kb-resize{cursor:ns-resize;font-size:18px;min-width:44px;padding:0 10px;' +
+    '#kb-bar button.kb-icon{font-size:16px;min-width:44px;padding:0 10px;}' +
+    '#kb-bar button.kb-icon i{pointer-events:none;}' +
+    '#kb-bar button.kb-resize{cursor:ns-resize;font-size:16px;min-width:44px;padding:0 10px;' +
     'background:#333;touch-action:none;}';
   document.head.appendChild(css);
+
+  // Load Font Awesome 6 for icons
+  var faLink = document.createElement('link');
+  faLink.rel = 'stylesheet';
+  faLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css';
+  faLink.crossOrigin = 'anonymous';
+  document.head.appendChild(faLink);
 
   // -- Bar --
   var bar = document.createElement('div');
@@ -316,7 +324,7 @@
     b.type = 'button';
     if (opts && opts.id) b.id = opts.id;
     if (opts && opts.cls) b.className = opts.cls;
-    b.textContent = label;
+    if (opts && opts.html) { b.innerHTML = label; } else { b.textContent = label; }
     var isToggle = opts && opts.toggle;
     b.addEventListener('click', function (e) {
       e.preventDefault();
@@ -327,16 +335,20 @@
     return b;
   }
 
-  // Buttons
+  // Buttons — arrows and sel first (left side), then modifiers and actions
+  bar.appendChild(mkBtn('<i class="fa-solid fa-caret-left"></i>', function () { sendSeq('ArrowLeft'); }, { cls: 'kb-icon', html: true }));
+  bar.appendChild(mkBtn('<i class="fa-solid fa-caret-right"></i>', function () { sendSeq('ArrowRight'); }, { cls: 'kb-icon', html: true }));
+  bar.appendChild(mkBtn('<i class="fa-solid fa-caret-up"></i>', function () { sendSeq('ArrowUp'); }, { cls: 'kb-icon', html: true }));
+  bar.appendChild(mkBtn('<i class="fa-solid fa-caret-down"></i>', function () { sendSeq('ArrowDown'); }, { cls: 'kb-icon', html: true }));
+  bar.appendChild(mkBtn('<i class="fa-solid fa-i-cursor"></i>', function () { selMode ? disableSelMode() : enableSelMode(); }, { id: 'kb-sel', cls: 'kb-icon', toggle: true, norefocus: true, html: true }));
+  var cpBtn = mkBtn('<i class="fa-regular fa-copy"></i>', copySelection, { id: 'kb-copy', cls: 'kb-icon', html: true });
+  cpBtn.style.display = 'none';
+  bar.appendChild(cpBtn);
   bar.appendChild(mkBtn('ctrl', toggleCtrl, { id: 'kb-ctrl', toggle: true }));
   bar.appendChild(mkBtn('esc', function () { sendSeq('Escape'); }));
   bar.appendChild(mkBtn('tab', function () { sendSeq('Tab'); }));
   bar.appendChild(mkBtn('opt', toggleOpt, { id: 'kb-opt', toggle: true }));
-  bar.appendChild(mkBtn('sel', function () { selMode ? disableSelMode() : enableSelMode(); }, { id: 'kb-sel', toggle: true, norefocus: true }));
-  var cpBtn = mkBtn('cp', copySelection, { id: 'kb-copy' });
-  cpBtn.style.display = 'none';
-  bar.appendChild(cpBtn);
-  bar.appendChild(mkBtn('paste', function () {
+  bar.appendChild(mkBtn('<i class="fa-solid fa-clipboard"></i>', function () {
     // Try modern Clipboard API first (requires HTTPS/secure context)
     if (navigator.clipboard && navigator.clipboard.readText) {
       navigator.clipboard.readText().then(function (text) {
@@ -345,19 +357,15 @@
     } else {
       fallbackPaste();
     }
-  }));
-  bar.appendChild(mkBtn('\u25C0', function () { sendSeq('ArrowLeft'); }, { cls: 'kb-icon' }));
-  bar.appendChild(mkBtn('\u25B6', function () { sendSeq('ArrowRight'); }, { cls: 'kb-icon' }));
-  bar.appendChild(mkBtn('\u25B2', function () { sendSeq('ArrowUp'); }, { cls: 'kb-icon' }));
-  bar.appendChild(mkBtn('\u25BC', function () { sendSeq('ArrowDown'); }, { cls: 'kb-icon' }));
+  }, { cls: 'kb-icon', html: true }));
   // Keyboard toggle
-  bar.appendChild(mkBtn('\u2328', toggleKeyboard, { id: 'kb-kbd', cls: 'kb-icon', toggle: true, norefocus: true }));
+  bar.appendChild(mkBtn('<i class="fa-regular fa-keyboard"></i>', toggleKeyboard, { id: 'kb-kbd', cls: 'kb-icon', toggle: true, norefocus: true, html: true }));
   // Resize handle — drag up/down to adjust terminal height
-  var resizeBtn = mkBtn('\u2195', function () {}, { cls: 'kb-resize' });
+  var resizeBtn = mkBtn('<i class="fa-solid fa-up-down"></i>', function () {}, { cls: 'kb-resize', html: true });
   resizeBtn.addEventListener('touchstart', onResizeTouchStart, { passive: false });
   bar.appendChild(resizeBtn);
   // Refresh repos + update add-on
-  bar.appendChild(mkBtn('\u21BB', function () {
+  bar.appendChild(mkBtn('<i class="fa-solid fa-rotate"></i>', function () {
     showToast('Checking for updates...');
     var xhr = new XMLHttpRequest();
     xhr.open('GET', '/api/refresh-update');

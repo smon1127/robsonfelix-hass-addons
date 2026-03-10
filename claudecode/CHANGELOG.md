@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.85] - 2026-03-10
+
+### Changed
+- Reordered keybar: arrow keys and selection button moved to the left
+- Replaced text/Unicode labels with Font Awesome 6 icons (arrows, sel, copy, paste, keyboard, resize, update)
+- Text labels kept for modifier keys (ctrl, esc, tab, opt) for clarity
+
 ## [1.2.84] - 2026-03-10
 
 ### Fixed
