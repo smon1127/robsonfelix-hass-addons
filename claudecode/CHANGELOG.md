@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.94] - 2026-03-10
+
+### Added
+- Touch scroll on terminal area: one-finger swipe scrolls through terminal history
+- Natural/inverse direction (swipe up = scroll up into history, like iOS)
+- Slow sensitivity (40px finger movement = 1 row) for precise control
+- Inertia with 0.95 friction for smooth coast-to-stop after flick
+- Scrollbar remains fast (proportional position) for quick jumps
+- Does not interfere with selection mode or keybar
+
 ## [1.2.93] - 2026-03-10
 
 ### Changed

@@ -598,6 +598,106 @@
     updateScrollbar();
   }
 
+  // -- Terminal area touch scroll (slow, natural direction, with inertia) --
+  var termScroll = {
+    active: false,
+    lastY: 0,
+    remainder: 0,
+    lastTime: 0,
+    velocities: [],
+    inertiaV: 0,
+    inertiaTimer: 0,
+  };
+  // Pixels of finger movement per 1 terminal row scroll (higher = slower)
+  var TERM_SCROLL_SENSITIVITY = 40;
+
+  function termScrollByPx(dy) {
+    termScroll.remainder += dy;
+    var rows = Math.trunc(termScroll.remainder / TERM_SCROLL_SENSITIVITY);
+    if (rows === 0) return;
+    termScroll.remainder -= rows * TERM_SCROLL_SENSITIVITY;
+    var t = window.term;
+    if (t && typeof t.scrollLines === 'function') {
+      t.scrollLines(rows);
+    }
+  }
+
+  function termStartInertia() {
+    termCancelInertia();
+    if (Math.abs(termScroll.inertiaV) < 0.5) return;
+    var friction = 0.95;
+    function tick() {
+      termScroll.inertiaV *= friction;
+      if (Math.abs(termScroll.inertiaV) < 0.5) { termScroll.inertiaV = 0; return; }
+      termScrollByPx(termScroll.inertiaV);
+      updateScrollbar();
+      termScroll.inertiaTimer = requestAnimationFrame(tick);
+    }
+    termScroll.inertiaTimer = requestAnimationFrame(tick);
+  }
+
+  function termCancelInertia() {
+    if (termScroll.inertiaTimer) {
+      cancelAnimationFrame(termScroll.inertiaTimer);
+      termScroll.inertiaTimer = 0;
+    }
+    termScroll.inertiaV = 0;
+  }
+
+  function onTermTouchStart(e) {
+    // Only handle single-finger on terminal area, not in sel mode
+    if (selMode || e.touches.length !== 1) return;
+    // Check if touch is on xterm screen
+    var el = e.target;
+    var onXterm = false;
+    while (el && el !== document.body) {
+      if (el.classList && (el.classList.contains('xterm-screen') || el.classList.contains('xterm'))) { onXterm = true; break; }
+      if (el.id === 'kb-bar' || el.id === 'term-scrollbar') return;
+      el = el.parentElement;
+    }
+    if (!onXterm) return;
+    termCancelInertia();
+    termScroll.active = true;
+    termScroll.lastY = e.touches[0].clientY;
+    termScroll.remainder = 0;
+    termScroll.lastTime = Date.now();
+    termScroll.velocities = [];
+  }
+
+  function onTermTouchMove(e) {
+    if (!termScroll.active || e.touches.length !== 1) return;
+    var curY = e.touches[0].clientY;
+    var dy = termScroll.lastY - curY; // natural: swipe up = positive = scroll down into history
+    var now = Date.now();
+    var dt = now - termScroll.lastTime;
+    termScrollByPx(dy);
+    updateScrollbar();
+    // Track velocity (px per 16ms frame)
+    if (dt > 0) {
+      var v = (dy / dt) * 16;
+      termScroll.velocities.push(v);
+      if (termScroll.velocities.length > 5) termScroll.velocities.shift();
+    }
+    termScroll.lastY = curY;
+    termScroll.lastTime = now;
+  }
+
+  function onTermTouchEnd() {
+    if (!termScroll.active) return;
+    termScroll.active = false;
+    var vels = termScroll.velocities;
+    if (vels.length > 0) {
+      var sum = 0;
+      for (var i = 0; i < vels.length; i++) sum += vels[i];
+      termScroll.inertiaV = sum / vels.length;
+      termStartInertia();
+    }
+  }
+
+  document.addEventListener('touchstart', onTermTouchStart, { passive: true });
+  document.addEventListener('touchmove', onTermTouchMove, { passive: true });
+  document.addEventListener('touchend', onTermTouchEnd, { passive: true });
+
   // -- Layout engine --
   var kbOpen = false;
   var hasHadInput = false; // true after first keyboard open; starts at 100% until then
