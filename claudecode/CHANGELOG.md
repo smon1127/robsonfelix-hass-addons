@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.8] - 2026-03-10
+
+### Fixed
+- Fix 20→21 row bug: start at full height, snap to exact 21 rows on first focusin when cell dimensions are accurate
+
 ## [1.3.7] - 2026-03-10
 
 ### Added

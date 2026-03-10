@@ -887,11 +887,9 @@
       e.preventDefault();
     }, { passive: false });
 
-    // Start with keyboard active and 21-row height
-    kbOpen = true;
-    hasHadInput = true;
-    var kbBtn = document.getElementById('kb-kbd');
-    if (kbBtn) kbBtn.classList.add('kb-active');
+    // Start at full height; snap to 21 rows on first focusin (when cell dims are accurate)
+    kbOpen = false;
+    hasHadInput = false;
     updateLayout();
 
     // iOS requires a user gesture to show keyboard in WKWebView.
