@@ -25,6 +25,7 @@ claude "Why isn't my motion sensor automation working?"
 - **Customizable Theme**: Choose between dark and light terminal themes
 - **Multi-Architecture**: Supports amd64, aarch64, armv7, armhf, and i386
 - **Secure Authentication**: Claude Code handles its own authentication securely
+- **Touch-Friendly Keybar**: Floating keyboard toolbar auto-appears on tablets and phones
 
 ## Setup
 
@@ -110,6 +111,25 @@ claude --continue
 | `/media` | Media folder | read-write |
 | `/ssl` | SSL certificates | read-only |
 | `/backup` | Backups | read-only |
+
+## Touch & Mobile Support
+
+On tablets and phones, a floating keybar automatically appears at the bottom of the terminal. It provides keys that are otherwise inaccessible on a touchscreen keyboard:
+
+| Button | Action |
+|--------|--------|
+| `Esc` | Send Escape |
+| `Tab` | Send Tab |
+| `Ctrl` | Latch Ctrl modifier (tap, then tap a letter) |
+| `Alt` | Latch Alt modifier |
+| `← ↑ ↓ →` | Arrow keys |
+| `PgUp / PgDn` | Page Up / Page Down |
+| `Home / End` | Home / End |
+| `Ctrl+C` | Interrupt (SIGINT) |
+| `Ctrl+D` | EOF / logout |
+| `Hide` | Collapse the keybar (tap ⌨︎ to restore) |
+
+The keybar is **not shown on desktop browsers** — it only activates when a touch input device is detected.
 
 ## Session Persistence
 

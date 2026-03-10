@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.64] - 2026-03-10
+
+### Added
+- Floating keybar overlay for touch/mobile devices (Esc, Tab, Ctrl, Alt, arrow keys, Ctrl+C/D, Page Up/Down, Home/End)
+- Keybar is hidden automatically on non-touch devices (pointer: coarse / maxTouchPoints detection)
+- Ctrl and Alt buttons latch (toggle) so modifier+key combos work on touchscreens
+- Hide/show button to collapse the keybar when not needed
+- HTTP ingress proxy (`server.js`) that injects the overlay into ttyd's HTML response
+- `python3` added to the container image
+
+### Changed
+- Startup logic extracted from inline Dockerfile CMD into a dedicated `start.sh` script
+- ttyd now listens internally on port 7682; Node.js proxy serves ingress on port 7681
+- `NODE_PATH` environment variable set to `/opt/claudecode-proxy/node_modules`
+- `http-proxy` npm package added to the proxy bundle
+
 ## [1.2.63] - 2026-02-23
 
 ### Fixed
