@@ -16,7 +16,6 @@
   var barHidden = false;
   var selMode = false;
   var BAR_H = 36;
-  var fullH = window.innerHeight;
 
   function getTextarea() {
     return document.querySelector('.xterm-helper-textarea');
@@ -88,17 +87,13 @@
   function getCellDims() {
     var t = window.term;
     if (!t || !t._core) return null;
-    var core = t._core;
-    // Try render service dimensions
-    var rs = core._renderService;
+    var rs = t._core._renderService;
     if (rs && rs.dimensions) {
       var d = rs.dimensions;
-      // Try css cell dimensions first, fall back to actual
       var w = (d.css && d.css.cell && d.css.cell.width) || d.actualCellWidth;
       var h = (d.css && d.css.cell && d.css.cell.height) || d.actualCellHeight;
       if (w && h) return { w: w, h: h };
     }
-    // Fallback: calculate from screen element size
     var screen = document.querySelector('.xterm-screen');
     if (screen && t.cols && t.rows) {
       var rect = screen.getBoundingClientRect();
@@ -123,91 +118,51 @@
   function selectRange(start, end) {
     var t = window.term;
     if (!t) return;
-    // Normalize: ensure start is before end
     var r1 = start.row, c1 = start.col, r2 = end.row, c2 = end.col;
     if (r1 > r2 || (r1 === r2 && c1 > c2)) {
       var tmp = r1; r1 = r2; r2 = tmp;
       tmp = c1; c1 = c2; c2 = tmp;
     }
-    // Calculate length: from (c1,r1) to (c2,r2)
-    var len;
-    if (r1 === r2) {
-      len = c2 - c1 + 1;
-    } else {
-      len = (t.cols - c1) + (r2 - r1 - 1) * t.cols + (c2 + 1);
-    }
+    var len = r1 === r2 ? c2 - c1 + 1 : (t.cols - c1) + (r2 - r1 - 1) * t.cols + (c2 + 1);
     t.select(c1, r1 + t.buffer.active.viewportY, len);
-  }
-
-  function createSelOverlay() {
-    if (selOverlay) return selOverlay;
-    selOverlay = document.createElement('div');
-    selOverlay.id = 'kb-sel-overlay';
-    selOverlay.style.cssText =
-      'position:absolute;top:0;left:0;right:0;bottom:0;z-index:9999;' +
-      'cursor:crosshair;touch-action:none;';
-    return selOverlay;
   }
 
   function enableSelMode() {
     selMode = true;
-    var btn = document.getElementById('kb-sel');
-    if (btn) btn.classList.add('kb-active');
-    // Show copy button
-    var copyBtn = document.getElementById('kb-copy');
-    if (copyBtn) copyBtn.style.display = '';
-    // Place transparent overlay over the terminal to capture touches
+    document.getElementById('kb-sel').classList.add('kb-active');
+    document.getElementById('kb-copy').style.display = '';
     var screen = document.querySelector('.xterm-screen');
     if (screen && screen.parentElement) {
-      var overlay = createSelOverlay();
+      if (!selOverlay) {
+        selOverlay = document.createElement('div');
+        selOverlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:9999;cursor:crosshair;touch-action:none;';
+      }
       screen.parentElement.style.position = 'relative';
-      screen.parentElement.appendChild(overlay);
-
-      overlay.addEventListener('touchstart', onSelTouchStart, { passive: false });
-      overlay.addEventListener('touchmove', onSelTouchMove, { passive: false });
-      overlay.addEventListener('touchend', onSelTouchEnd, { passive: false });
+      screen.parentElement.appendChild(selOverlay);
+      selOverlay.addEventListener('touchstart', onSelTouch, { passive: false });
+      selOverlay.addEventListener('touchmove', onSelTouch, { passive: false });
     }
   }
 
   function disableSelMode() {
     selMode = false;
     selStartCell = null;
-    var btn = document.getElementById('kb-sel');
-    if (btn) btn.classList.remove('kb-active');
-    var copyBtn = document.getElementById('kb-copy');
-    if (copyBtn) copyBtn.style.display = 'none';
-    // Remove overlay
+    document.getElementById('kb-sel').classList.remove('kb-active');
+    document.getElementById('kb-copy').style.display = 'none';
     if (selOverlay && selOverlay.parentElement) {
-      selOverlay.removeEventListener('touchstart', onSelTouchStart);
-      selOverlay.removeEventListener('touchmove', onSelTouchMove);
-      selOverlay.removeEventListener('touchend', onSelTouchEnd);
+      selOverlay.removeEventListener('touchstart', onSelTouch);
+      selOverlay.removeEventListener('touchmove', onSelTouch);
       selOverlay.parentElement.removeChild(selOverlay);
     }
-    // Clear selection
     if (window.term) window.term.clearSelection();
   }
 
-  function toggleSelMode() {
-    if (selMode) disableSelMode();
-    else enableSelMode();
-  }
-
-  function onSelTouchStart(e) {
+  function onSelTouch(e) {
     e.preventDefault();
     var cell = touchToCell(e.touches[0]);
-    if (cell) selStartCell = cell;
-  }
-
-  function onSelTouchMove(e) {
-    e.preventDefault();
-    if (!selStartCell) return;
-    var cell = touchToCell(e.touches[0]);
-    if (cell) selectRange(selStartCell, cell);
-  }
-
-  function onSelTouchEnd(e) {
-    e.preventDefault();
-    // Selection stays highlighted — user can tap copy
+    if (!cell) return;
+    if (e.type === 'touchstart') selStartCell = cell;
+    if (selStartCell) selectRange(selStartCell, cell);
   }
 
   function copySelection() {
@@ -216,17 +171,11 @@
     var text = t.getSelection();
     if (!text) return;
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(function () {
-        showToast('Copied!');
-      }, function () {
-        fallbackCopy(text);
-      });
-    } else {
-      fallbackCopy(text);
-    }
+      navigator.clipboard.writeText(text).then(function () { showToast('Copied!'); }, function () { fbCopy(text); });
+    } else { fbCopy(text); }
   }
 
-  function fallbackCopy(text) {
+  function fbCopy(text) {
     var ta = document.createElement('textarea');
     ta.value = text;
     ta.style.cssText = 'position:fixed;left:-9999px;';
@@ -241,12 +190,7 @@
     if (!el) {
       el = document.createElement('div');
       el.id = 'kb-toast';
-      el.style.cssText =
-        'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);' +
-        'z-index:999999;padding:8px 20px;border-radius:8px;' +
-        'background:rgba(0,0,0,0.8);color:#fff;font-size:14px;' +
-        'font-family:-apple-system,system-ui,sans-serif;pointer-events:none;' +
-        'transition:opacity 0.3s;';
+      el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999999;padding:8px 20px;border-radius:8px;background:rgba(0,0,0,0.8);color:#fff;font-size:14px;font-family:-apple-system,system-ui,sans-serif;pointer-events:none;transition:opacity 0.3s;';
       document.body.appendChild(el);
     }
     el.textContent = msg;
@@ -258,7 +202,7 @@
   // -- CSS --
   var css = document.createElement('style');
   css.textContent =
-    'html,body{margin:0;padding:0;overflow:hidden !important;height:100%;}' +
+    'html,body{margin:0;padding:0;overflow:hidden !important;height:100vh;height:100dvh;}' +
     '#kb-bar{position:fixed;left:0;right:0;bottom:0;z-index:99999;' +
     'display:flex;align-items:center;height:' + BAR_H + 'px;padding:0 2px;' +
     'background:#1a1a1a;border-top:1px solid #333;gap:1px;' +
@@ -312,17 +256,17 @@
     return s;
   }
 
-  // Buttons - row 1: ctrl, esc, tab, chars, sel, copy | arrows | dismiss, hide
+  // Buttons
   bar.appendChild(mkBtn('ctrl', toggleCtrl, { id: 'kb-ctrl', toggle: true }));
   bar.appendChild(mkBtn('esc', function () { sendSeq('Escape'); }));
   bar.appendChild(mkBtn('tab', function () { sendSeq('Tab'); }));
   bar.appendChild(mkBtn('|', function () { sendData('|'); clearCtrl(); }));
   bar.appendChild(mkBtn('-', function () { sendData('-'); clearCtrl(); }));
   bar.appendChild(mkBtn('/', function () { sendData('/'); clearCtrl(); }));
-  bar.appendChild(mkBtn('sel', toggleSelMode, { id: 'kb-sel', toggle: true, norefocus: true }));
-  var copyBtn = mkBtn('cp', function () { copySelection(); }, { id: 'kb-copy' });
-  copyBtn.style.display = 'none';
-  bar.appendChild(copyBtn);
+  bar.appendChild(mkBtn('sel', function () { selMode ? disableSelMode() : enableSelMode(); }, { id: 'kb-sel', toggle: true, norefocus: true }));
+  var cpBtn = mkBtn('cp', copySelection, { id: 'kb-copy' });
+  cpBtn.style.display = 'none';
+  bar.appendChild(cpBtn);
   bar.appendChild(mkSep());
   bar.appendChild(mkBtn('\u25C0', function () { sendSeq('ArrowLeft'); }, { cls: 'kb-icon' }));
   bar.appendChild(mkBtn('\u25B6', function () { sendSeq('ArrowRight'); }, { cls: 'kb-icon' }));
@@ -342,16 +286,11 @@
   });
 
   // -- Layout engine --
-  function getVisibleHeight() {
-    if (window.visualViewport) return Math.round(window.visualViewport.height);
-    return window.innerHeight;
-  }
-
   function fitTerminal() {
     if (!window.term) return;
     try {
-      if (window.term._addonManager) {
-        var addons = window.term._addonManager._addons;
+      var addons = window.term._addonManager && window.term._addonManager._addons;
+      if (addons) {
         for (var i = 0; i < addons.length; i++) {
           if (addons[i].instance && typeof addons[i].instance.fit === 'function') {
             addons[i].instance.fit();
@@ -360,12 +299,11 @@
         }
       }
     } catch (e) {}
-    try { window.term.refresh(0, window.term.rows - 1); } catch (e) {}
   }
 
   function updateLayout() {
-    var h = getVisibleHeight();
-    if (h > fullH) fullH = h;
+    // Use innerHeight which changes with interactive-widget=resizes-content
+    var h = window.innerHeight;
 
     var barActive = !barHidden;
     var barSize = barActive ? BAR_H : 0;
@@ -379,6 +317,7 @@
       showBtn.style.display = 'block';
     }
 
+    // Force heights on everything
     document.documentElement.style.height = h + 'px';
     document.body.style.height = h + 'px';
 
@@ -401,17 +340,18 @@
     }
 
     window.scrollTo(0, 0);
-    clearTimeout(updateLayout._fitTimer);
-    updateLayout._fitTimer = setTimeout(fitTerminal, 50);
+    clearTimeout(updateLayout._t);
+    updateLayout._t = setTimeout(fitTerminal, 50);
   }
 
-  // Suppress iOS autocorrect
+  // Suppress iOS autocorrect and form accessory bar
   function patchTextarea(ta) {
     if (!ta) return;
     ta.setAttribute('autocomplete', 'off');
     ta.setAttribute('autocorrect', 'off');
     ta.setAttribute('autocapitalize', 'none');
     ta.setAttribute('spellcheck', 'false');
+    ta.setAttribute('inputmode', 'text');
     ta.addEventListener('keydown', onTermKeydown, true);
   }
 
@@ -432,15 +372,15 @@
       obs.observe(document.body, { childList: true, subtree: true });
     }
 
+    // Listen for size changes from all possible sources
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', updateLayout);
-      window.visualViewport.addEventListener('scroll', function () { window.scrollTo(0, 0); });
     }
-    window.addEventListener('resize', function () {
-      var h = getVisibleHeight();
-      if (h > fullH) fullH = h;
-      updateLayout();
-    });
+    window.addEventListener('resize', updateLayout);
+
+    // Also detect keyboard via focus events as fallback
+    document.addEventListener('focusin', function () { setTimeout(updateLayout, 100); });
+    document.addEventListener('focusout', function () { setTimeout(updateLayout, 100); });
 
     updateLayout();
     focusTerm();

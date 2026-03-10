@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.74] - 2026-03-10
+
+### Fixed
+- Inject `<meta viewport>` with `interactive-widget=resizes-content` via proxy
+- This tells iOS/Chrome to resize the page content when keyboard opens (not just scroll)
+- `window.innerHeight` now actually changes when keyboard opens, so terminal resizes correctly
+- Added `inputmode="text"` on xterm textarea to suppress iOS form accessory bar (arrows + checkmark)
+- CSS uses `100dvh` (dynamic viewport height) as fallback
+- Added focusin/focusout listeners as additional keyboard detection fallback
+
 ## [1.2.73] - 2026-03-10
 
 ### Added

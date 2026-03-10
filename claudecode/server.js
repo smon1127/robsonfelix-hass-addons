@@ -36,6 +36,14 @@ const server = http.createServer((req, res) => {
       proxyRes.on('data', (c) => chunks.push(c));
       proxyRes.on('end', () => {
         let html = Buffer.concat(chunks).toString('utf8');
+        // Inject viewport meta to make iOS resize content when keyboard opens
+        const vpMeta = '<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,interactive-widget=resizes-content">';
+        // Replace existing viewport meta or inject into head
+        if (html.includes('<meta name="viewport"')) {
+          html = html.replace(/<meta name="viewport"[^>]*>/, vpMeta);
+        } else {
+          html = html.replace('<head>', '<head>' + vpMeta);
+        }
         html = html.replace('</body>', '<script src="overlay.js"></script></body>');
         const headers = { ...proxyRes.headers };
         delete headers['content-length'];
