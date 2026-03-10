@@ -25,10 +25,27 @@
     if (ta) ta.focus({ preventScroll: true });
   }
 
+  // Hidden dummy input used to steal focus and dismiss iOS keyboard
+  var _dummyInput = null;
+  function getDummyInput() {
+    if (!_dummyInput) {
+      _dummyInput = document.createElement('input');
+      _dummyInput.setAttribute('readonly', 'true');
+      _dummyInput.style.cssText = 'position:fixed;left:-9999px;top:0;width:0;height:0;opacity:0;pointer-events:none;';
+      document.body.appendChild(_dummyInput);
+    }
+    return _dummyInput;
+  }
+
   function toggleKeyboard() {
     var ta = getTextarea();
     if (!ta) return;
     if (kbOpen) {
+      // On iOS WKWebView, ta.blur() alone doesn't dismiss the keyboard.
+      // Focus a readonly dummy input first, then blur it — this forces iOS to close the keyboard.
+      var dummy = getDummyInput();
+      dummy.focus();
+      dummy.blur();
       ta.blur();
       kbOpen = false;
     } else {
@@ -353,16 +370,16 @@
       fallbackPaste();
     }
   }, { cls: 'kb-icon', html: true }));
+  // Resize handle — next to paste button
+  var resizeBtn = mkBtn('<i class="fa-solid fa-up-down"></i>', function () {}, { cls: 'kb-resize', html: true });
+  resizeBtn.addEventListener('touchstart', onResizeTouchStart, { passive: false });
+  bar.appendChild(resizeBtn);
   bar.appendChild(mkBtn('ctrl', toggleCtrl, { id: 'kb-ctrl', toggle: true }));
   bar.appendChild(mkBtn('esc', function () { sendSeq('Escape'); }));
   bar.appendChild(mkBtn('tab', function () { sendSeq('Tab'); }));
   bar.appendChild(mkBtn('opt', toggleOpt, { id: 'kb-opt', toggle: true }));
   // Keyboard toggle
   bar.appendChild(mkBtn('<i class="fa-regular fa-keyboard"></i>', toggleKeyboard, { id: 'kb-kbd', cls: 'kb-icon', toggle: true, norefocus: true, html: true }));
-  // Resize handle — drag up/down to adjust terminal height
-  var resizeBtn = mkBtn('<i class="fa-solid fa-up-down"></i>', function () {}, { cls: 'kb-resize', html: true });
-  resizeBtn.addEventListener('touchstart', onResizeTouchStart, { passive: false });
-  bar.appendChild(resizeBtn);
 
   // -- Layout engine --
   var kbOpen = false;
@@ -429,7 +446,15 @@
     var kbDetected = (fullH - visH) > 100;
 
     if (kbOpen || kbDetected) {
-      var h = kbDetected ? visH : Math.round(fullH * 0.50);
+      // If viewport detects keyboard, use that height; otherwise target 21 terminal rows
+      var h;
+      if (kbDetected) {
+        h = visH;
+      } else {
+        var dims = getCellDims();
+        var rowH = dims ? dims.h : 18;
+        h = Math.round(21 * rowH) + BAR_H;
+      }
       setHeight(h);
     } else {
       setHeight(fullH);

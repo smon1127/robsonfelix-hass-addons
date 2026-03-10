@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.87] - 2026-03-10
+
+### Fixed
+- Keyboard hide button now works on iOS: uses dummy readonly input focus/blur trick to force keyboard dismissal in WKWebView
+- Default keyboard-open height targets 21 terminal rows (calculated from actual cell dimensions)
+
+### Changed
+- Moved resize handle next to paste button (left group of keybar)
+- Button order: arrows → sel → cp → paste → resize → ctrl esc tab opt → keyboard
+
 ## [1.2.86] - 2026-03-10
 
 ### Changed
