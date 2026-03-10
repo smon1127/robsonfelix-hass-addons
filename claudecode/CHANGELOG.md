@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.98] - 2026-03-10
+
+### Fixed
+- Fixed startup crash: reverted tmux-attach.sh wrapper script back to direct `tmux new-session -A -s claude`
+- Tmux config still sets history-limit 50000, status off, mouse off via .tmux.conf
+
 ## [1.2.97] - 2026-03-10
 
 ### Fixed

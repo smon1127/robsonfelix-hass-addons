@@ -141,26 +141,14 @@ else
 fi
 
 if [ "$SESSION_PERSIST" = "true" ]; then
-  # Configure tmux with large scrollback and dump history on reattach
+  # Configure tmux with large scrollback
   mkdir -p /root
   cat > /root/.tmux.conf <<'TMUXEOF'
 set -g history-limit 50000
 set -g mouse off
 set -g status off
 TMUXEOF
-  # Wrapper script: reattach to tmux and replay scrollback history into xterm
-  cat > /usr/local/bin/tmux-attach.sh <<'ATTACHEOF'
-#!/usr/bin/env bash
-if tmux has-session -t claude 2>/dev/null; then
-  # Dump scrollback history so xterm.js client gets it
-  tmux capture-pane -t claude -p -S -2000 2>/dev/null || true
-  exec tmux attach-session -t claude
-else
-  exec tmux new-session -s claude
-fi
-ATTACHEOF
-  chmod +x /usr/local/bin/tmux-attach.sh
-  SHELL_CMD='tmux-attach.sh'
+  SHELL_CMD='tmux new-session -A -s claude'
 else
   SHELL_CMD='bash --login'
 fi
