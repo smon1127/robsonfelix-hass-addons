@@ -7,7 +7,62 @@ const TTYD_HOST = '127.0.0.1';
 const TTYD_PORT = 7682;
 const overlayPath = path.join(__dirname, 'overlay.js');
 
+const SUPERVISOR_TOKEN = process.env.SUPERVISOR_TOKEN || '';
+
+// Helper: call Supervisor API
+function supervisorAPI(method, path, body) {
+  return new Promise((resolve, reject) => {
+    const opts = {
+      host: 'supervisor', port: 80, path, method,
+      headers: {
+        'Authorization': 'Bearer ' + SUPERVISOR_TOKEN,
+        'Content-Type': 'application/json',
+      },
+    };
+    const req = http.request(opts, (res) => {
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => {
+        try { resolve(JSON.parse(Buffer.concat(chunks).toString())); }
+        catch (e) { resolve({ result: 'ok' }); }
+      });
+    });
+    req.on('error', reject);
+    if (body) req.write(JSON.stringify(body));
+    req.end();
+  });
+}
+
 const server = http.createServer((req, res) => {
+  // API: refresh repos and update add-on
+  if (req.url === '/api/refresh-update') {
+    res.setHeader('Content-Type', 'application/json');
+    (async () => {
+      try {
+        // 1. Refresh store
+        await supervisorAPI('POST', '/store/refresh');
+        // 2. Check current add-on info
+        const info = await supervisorAPI('GET', '/addons/self/info');
+        const current = info.data && info.data.version;
+        const latest = info.data && info.data.version_latest;
+        if (!latest || !current) {
+          res.end(JSON.stringify({ status: 'error', message: 'Could not read version info' }));
+          return;
+        }
+        if (current === latest) {
+          res.end(JSON.stringify({ status: 'current', version: current, message: 'Already up to date' }));
+          return;
+        }
+        // 3. Trigger update (this will restart the container)
+        await supervisorAPI('POST', '/addons/self/update');
+        res.end(JSON.stringify({ status: 'updating', from: current, to: latest, message: 'Updating to ' + latest + '...' }));
+      } catch (e) {
+        res.end(JSON.stringify({ status: 'error', message: e.message }));
+      }
+    })();
+    return;
+  }
+
   // Serve overlay.js directly
   if (req.url === '/overlay.js') {
     res.writeHead(200, {

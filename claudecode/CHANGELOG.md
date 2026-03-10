@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.81] - 2026-03-10
+
+### Added
+- One-tap add-on update button (↻) on the floating keybar
+- Refreshes add-on store repos, checks for updates, and triggers update if available
+- Proxy endpoint `/api/refresh-update` calls Supervisor API (refresh → check → update)
+- Shows toast with status: "Already up to date" or "Updating to X.X.X..."
+
 ## [1.2.80] - 2026-03-10
 
 ### Changed

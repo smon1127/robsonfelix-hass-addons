@@ -330,6 +330,20 @@
   var resizeBtn = mkBtn('\u2195', function () {}, { cls: 'kb-resize' });
   resizeBtn.addEventListener('touchstart', onResizeTouchStart, { passive: false });
   bar.appendChild(resizeBtn);
+  // Refresh repos + update add-on
+  bar.appendChild(mkBtn('\u21BB', function () {
+    showToast('Refreshing repos...');
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/api/refresh-update');
+    xhr.onload = function () {
+      try {
+        var r = JSON.parse(xhr.responseText);
+        showToast(r.message || r.status);
+      } catch (e) { showToast('Error: ' + xhr.statusText); }
+    };
+    xhr.onerror = function () { showToast('Network error'); };
+    xhr.send();
+  }, { cls: 'kb-icon', norefocus: true }));
 
   // -- Layout engine --
   var kbOpen = false;
