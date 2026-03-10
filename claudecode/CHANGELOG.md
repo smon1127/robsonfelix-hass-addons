@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.5] - 2026-03-10
+
+### Fixed
+- Reverted overlay.js to v1.2.94 base (last confirmed working scroll)
+- Resize handle moved to far right (from v1.2.95)
+- Added immediate updateLayout + triple pass on focusin for reliable 21-row snap
+- Starts with keyboard active and 21-row height (v1.2.94 behavior)
+
 ## [1.3.4] - 2026-03-10
 
 ### Fixed

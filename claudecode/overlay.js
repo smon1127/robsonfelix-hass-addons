@@ -839,28 +839,9 @@
         hasHadInput = true;
         var btn = document.getElementById('kb-kbd');
         if (btn) btn.classList.add('kb-active');
-        // Snap to 21 rows immediately, then refine after keyboard animates
         updateLayout();
         setTimeout(updateLayout, 300);
         setTimeout(updateLayout, 600);
-      }
-    });
-    // Also snap to 21 rows on any tap on terminal area
-    document.addEventListener('touchstart', function (e) {
-      if (hasHadInput) return;
-      var el = e.target;
-      while (el && el !== document.body) {
-        if (el.classList && (el.classList.contains('xterm-screen') || el.classList.contains('xterm'))) {
-          hasHadInput = true;
-          kbOpen = true;
-          var btn = document.getElementById('kb-kbd');
-          if (btn) btn.classList.add('kb-active');
-          updateLayout();
-          setTimeout(updateLayout, 300);
-          return;
-        }
-        if (el.id === 'kb-bar' || el.id === 'term-scrollbar') return;
-        el = el.parentElement;
       }
     });
     document.addEventListener('focusout', function (e) {
@@ -910,13 +891,18 @@
       e.preventDefault();
     }, { passive: false });
 
-    // Start at 100% height; switch to 21 rows on first terminal focus
-    kbOpen = false;
-    hasHadInput = false;
+    // Start with keyboard active and 21-row height
+    kbOpen = true;
+    hasHadInput = true;
+    var kbBtn = document.getElementById('kb-kbd');
+    if (kbBtn) kbBtn.classList.add('kb-active');
     updateLayout();
 
-    // Try to show keyboard programmatically (works on some devices)
+    // iOS requires a user gesture to show keyboard in WKWebView.
+    // Try programmatic focus first (works on some devices), then
+    // add a one-time touch listener as fallback for iOS.
     focusTerm();
+    // Retry focus after textarea might appear (ttyd loads async)
     setTimeout(focusTerm, 500);
     setTimeout(focusTerm, 1500);
 
