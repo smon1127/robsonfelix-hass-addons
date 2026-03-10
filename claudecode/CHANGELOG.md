@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.1] - 2026-03-10
+
+### Fixed
+- Re-add working_directory support: read from options.json and pass --cwd to ttyd
+
 ## [1.4.0] - 2026-03-10
 
 ### Fixed

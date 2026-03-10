@@ -95,6 +95,7 @@ ENABLE_MCP=$(jq -r '.enable_mcp // true' /data/options.json)
 ENABLE_PLAYWRIGHT=$(jq -r '.enable_playwright_mcp // false' /data/options.json)
 PLAYWRIGHT_HOST=$(jq -r '.playwright_cdp_host // ""' /data/options.json)
 AUTO_UPDATE=$(jq -r '.auto_update_claude // true' /data/options.json)
+WORK_DIR=$(jq -r '.working_directory // "/"' /data/options.json)
 
 if [ -z "$PLAYWRIGHT_HOST" ] && [ "$ENABLE_PLAYWRIGHT" = "true" ]; then
   echo '[INFO] Auto-detecting Playwright Browser hostname...'
@@ -147,6 +148,7 @@ else
 fi
 
 ttyd --port 7682 --writable --ping-interval 30 --max-clients 5 \
+  --cwd "$WORK_DIR" \
   -t fontSize="$FONT_SIZE" \
   -t fontFamily=Monaco,Consolas,monospace \
   -t scrollback=20000 \
