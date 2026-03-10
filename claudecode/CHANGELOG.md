@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.82] - 2026-03-10
+
+### Fixed
+- Resize drag direction corrected (drag down = taller, drag up = shorter)
+- Uses bar's actual screen position as reference for drag calculation
+- Custom terminal height preserved when toggling keyboard on/off
+- Focus/blur and viewport resize no longer reset user's resize position
+
+### Changed
+- Update button toast messages: "✓ v1.2.82 is latest" or "⬆ Updating to v1.2.83..."
+
 ## [1.2.81] - 2026-03-10
 
 ### Added

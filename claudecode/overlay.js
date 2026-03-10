@@ -37,6 +37,7 @@
     }
     var btn = document.getElementById('kb-kbd');
     if (btn) btn.classList.toggle('kb-active', kbOpen);
+    // Don't reset customH — keep user's resize position
     setTimeout(updateLayout, 300);
   }
 
@@ -234,14 +235,14 @@
   function onResizeTouchStart(e) {
     e.preventDefault();
     var startY = e.touches[0].clientY;
-    var startH = customH || getCurrentTermH();
+    var startBarTop = bar.getBoundingClientRect().top;
 
     function onMove(ev) {
       ev.preventDefault();
       var dy = ev.touches[0].clientY - startY;
-      var newH = Math.max(100, Math.min(startH - dy, fullH - BAR_H));
-      customH = newH;
-      setHeight(newH + BAR_H);
+      var newTermH = Math.max(100, Math.min(startBarTop + dy, fullH - BAR_H));
+      customH = newTermH;
+      setHeight(newTermH + BAR_H);
     }
     function onEnd() {
       document.removeEventListener('touchmove', onMove);
@@ -332,13 +333,19 @@
   bar.appendChild(resizeBtn);
   // Refresh repos + update add-on
   bar.appendChild(mkBtn('\u21BB', function () {
-    showToast('Refreshing repos...');
+    showToast('Checking for updates...');
     var xhr = new XMLHttpRequest();
     xhr.open('GET', '/api/refresh-update');
     xhr.onload = function () {
       try {
         var r = JSON.parse(xhr.responseText);
-        showToast(r.message || r.status);
+        if (r.status === 'current') {
+          showToast('\u2713 v' + (r.version || '?') + ' is latest');
+        } else if (r.status === 'updating') {
+          showToast('\u2B06 Updating to v' + r.to + '...');
+        } else {
+          showToast(r.message || 'Error');
+        }
       } catch (e) { showToast('Error: ' + xhr.statusText); }
     };
     xhr.onerror = function () { showToast('Network error'); };
@@ -445,25 +452,20 @@
     }
 
     if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', function () {
-        customH = 0; // reset custom height on viewport change
-        updateLayout();
-      });
+      window.visualViewport.addEventListener('resize', updateLayout);
     }
     window.addEventListener('resize', function () {
       var h = window.innerHeight;
       if (h > fullH) fullH = h;
-      customH = 0;
       updateLayout();
     });
 
-    // Track keyboard state via focus/blur
+    // Track keyboard state via focus/blur (don't reset customH)
     document.addEventListener('focusin', function (e) {
       if (e.target && e.target.classList && e.target.classList.contains('xterm-helper-textarea')) {
         kbOpen = true;
         var btn = document.getElementById('kb-kbd');
         if (btn) btn.classList.add('kb-active');
-        customH = 0;
         setTimeout(updateLayout, 300);
       }
     });
@@ -472,7 +474,6 @@
         kbOpen = false;
         var btn = document.getElementById('kb-kbd');
         if (btn) btn.classList.remove('kb-active');
-        customH = 0;
         setTimeout(updateLayout, 300);
       }
     });
