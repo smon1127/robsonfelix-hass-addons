@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.7] - 2026-03-10
+
+### Added
+- Terminal canvas single-finger touch scroll with inertia (v1.2.94)
+- Resize handle highlights blue while dragging (v1.2.93)
+- Triple-pass focusin for reliable 21-row snap on keyboard open
+
+### Changed
+- Esc button moved to far left of keybar (v1.2.93)
+- Resize handle moved to far right of keybar (v1.2.95)
+- No start.sh changes — kept at v1.2.92 base to preserve scrollbar
+
 ## [1.3.6] - 2026-03-10
 
 ### Fixed
