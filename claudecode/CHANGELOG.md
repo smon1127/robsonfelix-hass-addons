@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.76] - 2026-03-10
+
+### Changed
+- Removed `-` (dash) button from keybar
+- Added `opt` (Option/Alt) latch button — tap opt then a key to send Alt+key (Esc prefix)
+
 ## [1.2.75] - 2026-03-10
 
 ### Changed

@@ -71,12 +71,32 @@
     if (btn) btn.classList.toggle('kb-active', ctrlActive);
   }
 
+  var optActive = false;
+
+  function toggleOpt() {
+    optActive = !optActive;
+    var btn = document.getElementById('kb-opt');
+    if (btn) btn.classList.toggle('kb-active', optActive);
+  }
+
+  function clearOpt() {
+    optActive = false;
+    var btn = document.getElementById('kb-opt');
+    if (btn) btn.classList.remove('kb-active');
+  }
+
   function onTermKeydown(e) {
-    if (!ctrlActive) return;
-    if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
+    if (ctrlActive && e.key.length === 1 && /[a-z]/i.test(e.key)) {
       e.preventDefault();
       e.stopPropagation();
       sendCtrlChar(e.key);
+      return;
+    }
+    if (optActive && e.key.length === 1) {
+      e.preventDefault();
+      e.stopPropagation();
+      sendData('\x1b' + e.key);
+      clearOpt();
     }
   }
 
@@ -263,8 +283,8 @@
   bar.appendChild(mkBtn('ctrl', toggleCtrl, { id: 'kb-ctrl', toggle: true }));
   bar.appendChild(mkBtn('esc', function () { sendSeq('Escape'); }));
   bar.appendChild(mkBtn('tab', function () { sendSeq('Tab'); }));
-  bar.appendChild(mkBtn('-', function () { sendData('-'); clearCtrl(); }));
   bar.appendChild(mkBtn('/', function () { sendData('/'); clearCtrl(); }));
+  bar.appendChild(mkBtn('opt', toggleOpt, { id: 'kb-opt', toggle: true }));
   bar.appendChild(mkBtn('sel', function () { selMode ? disableSelMode() : enableSelMode(); }, { id: 'kb-sel', toggle: true, norefocus: true }));
   var cpBtn = mkBtn('cp', copySelection, { id: 'kb-copy' });
   cpBtn.style.display = 'none';
