@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.90] - 2026-03-10
+
+### Added
+- Two-finger scroll in selection mode: maps vertical swipe to arrow key sequences
+- Velocity-based scrolling with inertia — swipe faster to scroll faster, decelerates naturally
+- Natural scroll direction (swipe up = scroll up)
+- One-finger still does text selection, two-finger scrolls through terminal output
+
 ## [1.2.89] - 2026-03-10
 
 ### Changed

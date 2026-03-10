@@ -165,6 +165,112 @@
     t.select(c1, r1 + t.buffer.active.viewportY, len);
   }
 
+  // -- Two-finger scroll in selection mode --
+  var scrollState = {
+    active: false,
+    lastY: 0,
+    remainder: 0,      // fractional accumulated pixels
+    inertiaV: 0,       // current inertia velocity (px per frame)
+    inertiaTimer: 0,
+    lastTime: 0,
+    velocities: [],     // recent velocity samples for averaging
+  };
+
+  function getRowHeight() {
+    var dims = getCellDims();
+    return dims ? dims.h : 18;
+  }
+
+  function scrollByArrows(dy) {
+    // Accumulate sub-row pixel movement, emit arrow keys when full rows crossed
+    scrollState.remainder += dy;
+    var rowH = getRowHeight();
+    var rows = Math.trunc(scrollState.remainder / rowH);
+    if (rows === 0) return;
+    scrollState.remainder -= rows * rowH;
+    var seq = rows > 0 ? SEQUENCES.ArrowDown : SEQUENCES.ArrowUp;
+    var count = Math.abs(rows);
+    // Cap to prevent flooding
+    if (count > 10) count = 10;
+    for (var i = 0; i < count; i++) sendData(seq);
+  }
+
+  function startInertia() {
+    cancelInertia();
+    if (Math.abs(scrollState.inertiaV) < 1) return;
+    var friction = 0.92;
+    function tick() {
+      scrollState.inertiaV *= friction;
+      if (Math.abs(scrollState.inertiaV) < 1) { scrollState.inertiaV = 0; return; }
+      scrollByArrows(scrollState.inertiaV);
+      scrollState.inertiaTimer = requestAnimationFrame(tick);
+    }
+    scrollState.inertiaTimer = requestAnimationFrame(tick);
+  }
+
+  function cancelInertia() {
+    if (scrollState.inertiaTimer) {
+      cancelAnimationFrame(scrollState.inertiaTimer);
+      scrollState.inertiaTimer = 0;
+    }
+    scrollState.inertiaV = 0;
+  }
+
+  function onSelTouchStart(e) {
+    e.preventDefault();
+    cancelInertia();
+    if (e.touches.length >= 2) {
+      // Two-finger: start scroll mode
+      scrollState.active = true;
+      scrollState.lastY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      scrollState.remainder = 0;
+      scrollState.lastTime = Date.now();
+      scrollState.velocities = [];
+    } else {
+      // One finger: selection
+      scrollState.active = false;
+      var cell = touchToCell(e.touches[0]);
+      if (cell) selStartCell = cell;
+    }
+  }
+
+  function onSelTouchMove(e) {
+    e.preventDefault();
+    if (scrollState.active && e.touches.length >= 2) {
+      var curY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      var dy = curY - scrollState.lastY;
+      var now = Date.now();
+      var dt = now - scrollState.lastTime;
+      // Natural scroll direction: swipe up = scroll up (negative dy = ArrowUp)
+      scrollByArrows(-dy);
+      // Track velocity for inertia (pixels per 16ms frame)
+      if (dt > 0) {
+        var v = (-dy / dt) * 16;
+        scrollState.velocities.push(v);
+        if (scrollState.velocities.length > 5) scrollState.velocities.shift();
+      }
+      scrollState.lastY = curY;
+      scrollState.lastTime = now;
+    } else if (!scrollState.active && e.touches.length === 1) {
+      var cell = touchToCell(e.touches[0]);
+      if (cell && selStartCell) selectRange(selStartCell, cell);
+    }
+  }
+
+  function onSelTouchEnd(e) {
+    if (scrollState.active && e.touches.length < 2) {
+      // Calculate average velocity for inertia
+      var vels = scrollState.velocities;
+      if (vels.length > 0) {
+        var sum = 0;
+        for (var i = 0; i < vels.length; i++) sum += vels[i];
+        scrollState.inertiaV = sum / vels.length;
+        startInertia();
+      }
+      scrollState.active = false;
+    }
+  }
+
   function enableSelMode() {
     selMode = true;
     document.getElementById('kb-sel').classList.add('kb-active');
@@ -177,30 +283,25 @@
       }
       screen.parentElement.style.position = 'relative';
       screen.parentElement.appendChild(selOverlay);
-      selOverlay.addEventListener('touchstart', onSelTouch, { passive: false });
-      selOverlay.addEventListener('touchmove', onSelTouch, { passive: false });
+      selOverlay.addEventListener('touchstart', onSelTouchStart, { passive: false });
+      selOverlay.addEventListener('touchmove', onSelTouchMove, { passive: false });
+      selOverlay.addEventListener('touchend', onSelTouchEnd, { passive: false });
     }
   }
 
   function disableSelMode() {
     selMode = false;
     selStartCell = null;
+    cancelInertia();
     document.getElementById('kb-sel').classList.remove('kb-active');
     document.getElementById('kb-copy').style.display = 'none';
     if (selOverlay && selOverlay.parentElement) {
-      selOverlay.removeEventListener('touchstart', onSelTouch);
-      selOverlay.removeEventListener('touchmove', onSelTouch);
+      selOverlay.removeEventListener('touchstart', onSelTouchStart);
+      selOverlay.removeEventListener('touchmove', onSelTouchMove);
+      selOverlay.removeEventListener('touchend', onSelTouchEnd);
       selOverlay.parentElement.removeChild(selOverlay);
     }
     if (window.term) window.term.clearSelection();
-  }
-
-  function onSelTouch(e) {
-    e.preventDefault();
-    var cell = touchToCell(e.touches[0]);
-    if (!cell) return;
-    if (e.type === 'touchstart') selStartCell = cell;
-    if (selStartCell) selectRange(selStartCell, cell);
   }
 
   function copySelection() {
