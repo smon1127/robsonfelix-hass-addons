@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.65] - 2026-03-10
+
+### Fixed
+- AppArmor profile now allows `/opt/**` — `server.js` and `overlay.js` in `/opt/claudecode-proxy/` were blocked, causing `EACCES: permission denied` on startup
+- Fixed `COPY` paths in Dockerfile (HA build context is the add-on subdirectory, not repo root)
+- Added `chmod 644` for `server.js` and `overlay.js` after `COPY`
+- `start.sh` now creates `settings.json` if absent before MCP tries to patch it
+
 ## [1.2.64] - 2026-03-10
 
 ### Added
