@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.2] - 2026-03-10
+
+### Fixed
+- Fix working_directory: kill old tmux session on restart so new one starts in configured directory
+- Pass -c flag to tmux new-session for correct start directory
+
 ## [1.4.1] - 2026-03-10
 
 ### Fixed

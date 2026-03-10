@@ -142,7 +142,9 @@ else
 fi
 
 if [ "$SESSION_PERSIST" = "true" ]; then
-  SHELL_CMD='tmux new-session -A -s claude'
+  # Kill old tmux session so new one starts in WORK_DIR
+  tmux kill-session -t claude 2>/dev/null || true
+  SHELL_CMD="tmux new-session -s claude -c $WORK_DIR"
 else
   SHELL_CMD='bash --login'
 fi
