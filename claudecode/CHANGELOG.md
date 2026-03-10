@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.73] - 2026-03-10
+
+### Added
+- Selection mode toggle (`sel` button) on the floating keybar
+- Touch-drag to select text in the terminal when selection mode is active
+- Copy button (`cp`) appears when selection mode is on — copies selected text to clipboard
+- "Copied!" toast notification after successful copy
+- Transparent overlay captures touch events in selection mode without interfering with xterm
+
 ## [1.2.72] - 2026-03-10
 
 ### Added

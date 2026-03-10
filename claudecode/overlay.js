@@ -14,8 +14,8 @@
 
   var ctrlActive = false;
   var barHidden = false;
+  var selMode = false;
   var BAR_H = 36;
-  // Remember full screen height (before keyboard opens)
   var fullH = window.innerHeight;
 
   function getTextarea() {
@@ -81,6 +81,180 @@
     }
   }
 
+  // -- Selection mode --
+  var selStartCell = null;
+  var selOverlay = null;
+
+  function getCellDims() {
+    var t = window.term;
+    if (!t || !t._core) return null;
+    var core = t._core;
+    // Try render service dimensions
+    var rs = core._renderService;
+    if (rs && rs.dimensions) {
+      var d = rs.dimensions;
+      // Try css cell dimensions first, fall back to actual
+      var w = (d.css && d.css.cell && d.css.cell.width) || d.actualCellWidth;
+      var h = (d.css && d.css.cell && d.css.cell.height) || d.actualCellHeight;
+      if (w && h) return { w: w, h: h };
+    }
+    // Fallback: calculate from screen element size
+    var screen = document.querySelector('.xterm-screen');
+    if (screen && t.cols && t.rows) {
+      var rect = screen.getBoundingClientRect();
+      return { w: rect.width / t.cols, h: rect.height / t.rows };
+    }
+    return null;
+  }
+
+  function touchToCell(touch) {
+    var screen = document.querySelector('.xterm-screen');
+    var dims = getCellDims();
+    var t = window.term;
+    if (!screen || !dims || !t) return null;
+    var rect = screen.getBoundingClientRect();
+    var col = Math.floor((touch.clientX - rect.left) / dims.w);
+    var row = Math.floor((touch.clientY - rect.top) / dims.h);
+    col = Math.max(0, Math.min(col, t.cols - 1));
+    row = Math.max(0, Math.min(row, t.rows - 1));
+    return { col: col, row: row };
+  }
+
+  function selectRange(start, end) {
+    var t = window.term;
+    if (!t) return;
+    // Normalize: ensure start is before end
+    var r1 = start.row, c1 = start.col, r2 = end.row, c2 = end.col;
+    if (r1 > r2 || (r1 === r2 && c1 > c2)) {
+      var tmp = r1; r1 = r2; r2 = tmp;
+      tmp = c1; c1 = c2; c2 = tmp;
+    }
+    // Calculate length: from (c1,r1) to (c2,r2)
+    var len;
+    if (r1 === r2) {
+      len = c2 - c1 + 1;
+    } else {
+      len = (t.cols - c1) + (r2 - r1 - 1) * t.cols + (c2 + 1);
+    }
+    t.select(c1, r1 + t.buffer.active.viewportY, len);
+  }
+
+  function createSelOverlay() {
+    if (selOverlay) return selOverlay;
+    selOverlay = document.createElement('div');
+    selOverlay.id = 'kb-sel-overlay';
+    selOverlay.style.cssText =
+      'position:absolute;top:0;left:0;right:0;bottom:0;z-index:9999;' +
+      'cursor:crosshair;touch-action:none;';
+    return selOverlay;
+  }
+
+  function enableSelMode() {
+    selMode = true;
+    var btn = document.getElementById('kb-sel');
+    if (btn) btn.classList.add('kb-active');
+    // Show copy button
+    var copyBtn = document.getElementById('kb-copy');
+    if (copyBtn) copyBtn.style.display = '';
+    // Place transparent overlay over the terminal to capture touches
+    var screen = document.querySelector('.xterm-screen');
+    if (screen && screen.parentElement) {
+      var overlay = createSelOverlay();
+      screen.parentElement.style.position = 'relative';
+      screen.parentElement.appendChild(overlay);
+
+      overlay.addEventListener('touchstart', onSelTouchStart, { passive: false });
+      overlay.addEventListener('touchmove', onSelTouchMove, { passive: false });
+      overlay.addEventListener('touchend', onSelTouchEnd, { passive: false });
+    }
+  }
+
+  function disableSelMode() {
+    selMode = false;
+    selStartCell = null;
+    var btn = document.getElementById('kb-sel');
+    if (btn) btn.classList.remove('kb-active');
+    var copyBtn = document.getElementById('kb-copy');
+    if (copyBtn) copyBtn.style.display = 'none';
+    // Remove overlay
+    if (selOverlay && selOverlay.parentElement) {
+      selOverlay.removeEventListener('touchstart', onSelTouchStart);
+      selOverlay.removeEventListener('touchmove', onSelTouchMove);
+      selOverlay.removeEventListener('touchend', onSelTouchEnd);
+      selOverlay.parentElement.removeChild(selOverlay);
+    }
+    // Clear selection
+    if (window.term) window.term.clearSelection();
+  }
+
+  function toggleSelMode() {
+    if (selMode) disableSelMode();
+    else enableSelMode();
+  }
+
+  function onSelTouchStart(e) {
+    e.preventDefault();
+    var cell = touchToCell(e.touches[0]);
+    if (cell) selStartCell = cell;
+  }
+
+  function onSelTouchMove(e) {
+    e.preventDefault();
+    if (!selStartCell) return;
+    var cell = touchToCell(e.touches[0]);
+    if (cell) selectRange(selStartCell, cell);
+  }
+
+  function onSelTouchEnd(e) {
+    e.preventDefault();
+    // Selection stays highlighted — user can tap copy
+  }
+
+  function copySelection() {
+    var t = window.term;
+    if (!t) return;
+    var text = t.getSelection();
+    if (!text) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        showToast('Copied!');
+      }, function () {
+        fallbackCopy(text);
+      });
+    } else {
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showToast('Copied!'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  function showToast(msg) {
+    var el = document.getElementById('kb-toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'kb-toast';
+      el.style.cssText =
+        'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);' +
+        'z-index:999999;padding:8px 20px;border-radius:8px;' +
+        'background:rgba(0,0,0,0.8);color:#fff;font-size:14px;' +
+        'font-family:-apple-system,system-ui,sans-serif;pointer-events:none;' +
+        'transition:opacity 0.3s;';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.opacity = '1';
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function () { el.style.opacity = '0'; }, 1200);
+  }
+
   // -- CSS --
   var css = document.createElement('style');
   css.textContent =
@@ -138,22 +312,24 @@
     return s;
   }
 
-  // Buttons
+  // Buttons - row 1: ctrl, esc, tab, chars, sel, copy | arrows | dismiss, hide
   bar.appendChild(mkBtn('ctrl', toggleCtrl, { id: 'kb-ctrl', toggle: true }));
   bar.appendChild(mkBtn('esc', function () { sendSeq('Escape'); }));
   bar.appendChild(mkBtn('tab', function () { sendSeq('Tab'); }));
   bar.appendChild(mkBtn('|', function () { sendData('|'); clearCtrl(); }));
   bar.appendChild(mkBtn('-', function () { sendData('-'); clearCtrl(); }));
   bar.appendChild(mkBtn('/', function () { sendData('/'); clearCtrl(); }));
+  bar.appendChild(mkBtn('sel', toggleSelMode, { id: 'kb-sel', toggle: true, norefocus: true }));
+  var copyBtn = mkBtn('cp', function () { copySelection(); }, { id: 'kb-copy' });
+  copyBtn.style.display = 'none';
+  bar.appendChild(copyBtn);
   bar.appendChild(mkSep());
   bar.appendChild(mkBtn('\u25C0', function () { sendSeq('ArrowLeft'); }, { cls: 'kb-icon' }));
   bar.appendChild(mkBtn('\u25B6', function () { sendSeq('ArrowRight'); }, { cls: 'kb-icon' }));
   bar.appendChild(mkBtn('\u25B2', function () { sendSeq('ArrowUp'); }, { cls: 'kb-icon' }));
   bar.appendChild(mkBtn('\u25BC', function () { sendSeq('ArrowDown'); }, { cls: 'kb-icon' }));
   bar.appendChild(mkSep());
-  // Dismiss keyboard button
   bar.appendChild(mkBtn('\u2B07', function () { blurTerm(); }, { cls: 'kb-icon', norefocus: true }));
-  // Hide bar button
   bar.appendChild(mkBtn('\u2328', function () {
     barHidden = true;
     updateLayout();
@@ -167,14 +343,12 @@
 
   // -- Layout engine --
   function getVisibleHeight() {
-    // Try visualViewport first (most accurate on iOS)
     if (window.visualViewport) return Math.round(window.visualViewport.height);
     return window.innerHeight;
   }
 
   function fitTerminal() {
     if (!window.term) return;
-    // Try fit addon
     try {
       if (window.term._addonManager) {
         var addons = window.term._addonManager._addons;
@@ -186,21 +360,17 @@
         }
       }
     } catch (e) {}
-    // Fallback: trigger a resize event so ttyd recalculates
     try { window.term.refresh(0, window.term.rows - 1); } catch (e) {}
   }
 
   function updateLayout() {
     var h = getVisibleHeight();
-
-    // Update fullH when keyboard is not open (height grows back)
     if (h > fullH) fullH = h;
 
     var barActive = !barHidden;
     var barSize = barActive ? BAR_H : 0;
     var termH = h - barSize;
 
-    // Show/hide bar
     if (barActive) {
       bar.style.display = 'flex';
       showBtn.style.display = 'none';
@@ -209,14 +379,11 @@
       showBtn.style.display = 'block';
     }
 
-    // Force document height to visible viewport
     document.documentElement.style.height = h + 'px';
     document.body.style.height = h + 'px';
 
-    // Force all containers between body and xterm to the terminal height
     var xterm = document.querySelector('.xterm');
     if (xterm) {
-      // Walk up from .xterm to body setting heights
       var el = xterm;
       while (el && el !== document.body) {
         el.style.height = termH + 'px';
@@ -226,8 +393,6 @@
       }
       xterm.style.height = termH + 'px';
       xterm.style.maxHeight = termH + 'px';
-
-      // Also set the xterm-screen
       var screen = xterm.querySelector('.xterm-screen');
       if (screen) {
         screen.style.height = termH + 'px';
@@ -235,10 +400,7 @@
       }
     }
 
-    // Scroll to top to prevent iOS from scrolling page behind keyboard
     window.scrollTo(0, 0);
-
-    // Refit terminal with small delay so DOM updates first
     clearTimeout(updateLayout._fitTimer);
     updateLayout._fitTimer = setTimeout(fitTerminal, 50);
   }
@@ -270,19 +432,16 @@
       obs.observe(document.body, { childList: true, subtree: true });
     }
 
-    // Listen for viewport changes
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', updateLayout);
       window.visualViewport.addEventListener('scroll', function () { window.scrollTo(0, 0); });
     }
     window.addEventListener('resize', function () {
-      // Update fullH on resize without keyboard
       var h = getVisibleHeight();
       if (h > fullH) fullH = h;
       updateLayout();
     });
 
-    // Initial layout
     updateLayout();
     focusTerm();
   }
