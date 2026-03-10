@@ -120,9 +120,9 @@ EOF
 
 RUN echo 'source ~/.bashrc' > /root/.profile
 
-COPY claudecode/server.js /opt/claudecode-proxy/server.js
-COPY claudecode/overlay.js /opt/claudecode-proxy/overlay.js
-COPY claudecode/start.sh /usr/local/bin/start-claudecode.sh
+COPY server.js /opt/claudecode-proxy/server.js
+COPY overlay.js /opt/claudecode-proxy/overlay.js
+COPY start.sh /usr/local/bin/start-claudecode.sh
 RUN chmod +x /usr/local/bin/start-claudecode.sh
 
 ENV PATH="/root/.local/bin:${PATH}"
