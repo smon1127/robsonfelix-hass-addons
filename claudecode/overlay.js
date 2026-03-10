@@ -836,9 +836,13 @@
     document.addEventListener('focusin', function (e) {
       if (e.target && e.target.classList && e.target.classList.contains('xterm-helper-textarea')) {
         kbOpen = true;
+        hasHadInput = true;
         var btn = document.getElementById('kb-kbd');
         if (btn) btn.classList.add('kb-active');
+        // Delay to let iOS keyboard animate and cell dims stabilize
         setTimeout(updateLayout, 300);
+        // Second pass ensures accurate 21-row height after fit completes
+        setTimeout(updateLayout, 600);
       }
     });
     document.addEventListener('focusout', function (e) {
@@ -888,18 +892,13 @@
       e.preventDefault();
     }, { passive: false });
 
-    // Start with keyboard active and 21-row height
-    kbOpen = true;
-    hasHadInput = true;
-    var kbBtn = document.getElementById('kb-kbd');
-    if (kbBtn) kbBtn.classList.add('kb-active');
+    // Start at 100% height; switch to 21 rows on first terminal focus
+    kbOpen = false;
+    hasHadInput = false;
     updateLayout();
 
-    // iOS requires a user gesture to show keyboard in WKWebView.
-    // Try programmatic focus first (works on some devices), then
-    // add a one-time touch listener as fallback for iOS.
+    // Try to show keyboard programmatically (works on some devices)
     focusTerm();
-    // Retry focus after textarea might appear (ttyd loads async)
     setTimeout(focusTerm, 500);
     setTimeout(focusTerm, 1500);
 

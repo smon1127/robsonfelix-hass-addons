@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.96] - 2026-03-10
+
+### Fixed
+- Initial height is now 100% (full screen); switches to exact 21 rows on first terminal tap
+- Avoids 20→21 row jump by deferring height calculation until cell dimensions are accurate
+- Double updateLayout pass (300ms + 600ms) after focusin ensures correct row count
+
 ## [1.2.95] - 2026-03-10
 
 ### Changed
