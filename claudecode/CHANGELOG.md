@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.78] - 2026-03-10
+
+### Fixed
+- Terminal now shrinks to ~45% height when keyboard is open (focus-based detection)
+- Tracks keyboard state via focusin/focusout on xterm textarea
+- Uses visualViewport height when available, falls back to 45% of full height
+- Terminal returns to 100% height when keyboard is dismissed
+- Dismiss keyboard button now properly resets keyboard state
+
 ## [1.2.77] - 2026-03-10
 
 ### Added

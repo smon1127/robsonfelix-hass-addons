@@ -29,6 +29,8 @@
   function blurTerm() {
     var ta = getTextarea();
     if (ta) ta.blur();
+    kbOpen = false;
+    setTimeout(updateLayout, 300);
   }
 
   function sendData(data) {
@@ -313,6 +315,9 @@
   });
 
   // -- Layout engine --
+  var kbOpen = false;
+  var fullH = window.innerHeight;
+
   function fitTerminal() {
     if (!window.term) return;
     try {
@@ -328,10 +333,7 @@
     } catch (e) {}
   }
 
-  function updateLayout() {
-    // Use innerHeight which changes with interactive-widget=resizes-content
-    var h = window.innerHeight;
-
+  function setHeight(h) {
     var barActive = !barHidden;
     var barSize = barActive ? BAR_H : 0;
     var termH = h - barSize;
@@ -344,7 +346,6 @@
       showBtn.style.display = 'block';
     }
 
-    // Force heights on everything
     document.documentElement.style.height = h + 'px';
     document.body.style.height = h + 'px';
 
@@ -367,8 +368,29 @@
     }
 
     window.scrollTo(0, 0);
-    clearTimeout(updateLayout._t);
-    updateLayout._t = setTimeout(fitTerminal, 50);
+    clearTimeout(setHeight._t);
+    setHeight._t = setTimeout(fitTerminal, 50);
+  }
+
+  function updateLayout() {
+    // Try to detect actual visible height
+    var vv = window.visualViewport;
+    var visH = vv ? Math.round(vv.height) : window.innerHeight;
+
+    // Update full height when it grows (keyboard closed)
+    if (visH > fullH) fullH = visH;
+
+    // Detect keyboard: if visualViewport is significantly smaller than full height
+    var kbDetected = (fullH - visH) > 100;
+
+    if (kbOpen || kbDetected) {
+      // Keyboard is open — use detected height, or 45% of full height as fallback
+      var h = kbDetected ? visH : Math.round(fullH * 0.45);
+      setHeight(h);
+    } else {
+      // Keyboard closed — full height
+      setHeight(fullH);
+    }
   }
 
   // Suppress iOS autocorrect and form accessory bar
@@ -405,9 +427,19 @@
     }
     window.addEventListener('resize', updateLayout);
 
-    // Also detect keyboard via focus events as fallback
-    document.addEventListener('focusin', function () { setTimeout(updateLayout, 100); });
-    document.addEventListener('focusout', function () { setTimeout(updateLayout, 100); });
+    // Track keyboard state via focus/blur on the textarea
+    document.addEventListener('focusin', function (e) {
+      if (e.target && e.target.classList && e.target.classList.contains('xterm-helper-textarea')) {
+        kbOpen = true;
+        setTimeout(updateLayout, 300);
+      }
+    });
+    document.addEventListener('focusout', function (e) {
+      if (e.target && e.target.classList && e.target.classList.contains('xterm-helper-textarea')) {
+        kbOpen = false;
+        setTimeout(updateLayout, 300);
+      }
+    });
 
     updateLayout();
     focusTerm();
