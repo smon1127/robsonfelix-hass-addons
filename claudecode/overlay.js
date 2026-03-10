@@ -718,11 +718,8 @@
     } catch (e) {}
   }
 
-  var SB_WIDTH = 10; // reserve pixels on right for scrollbar visibility
-
   function setHeight(h) {
     var termH = h - BAR_H;
-    var termW = window.innerWidth - SB_WIDTH;
 
     bar.style.display = 'flex';
     bar.style.top = (termH) + 'px';
@@ -736,28 +733,19 @@
 
     var xterm = document.querySelector('.xterm');
     if (xterm) {
-      // Set size on parents above xterm (with overflow hidden)
-      var el = xterm.parentElement;
+      var el = xterm;
       while (el && el !== document.body) {
         el.style.height = termH + 'px';
         el.style.maxHeight = termH + 'px';
-        el.style.width = termW + 'px';
-        el.style.maxWidth = termW + 'px';
         el.style.overflow = 'hidden';
         el = el.parentElement;
       }
-      // Set size on xterm container but DON'T set overflow hidden
-      // (xterm.js needs its internal .xterm-viewport to scroll)
       xterm.style.height = termH + 'px';
       xterm.style.maxHeight = termH + 'px';
-      xterm.style.width = termW + 'px';
-      xterm.style.maxWidth = termW + 'px';
       var screen = xterm.querySelector('.xterm-screen');
       if (screen) {
         screen.style.height = termH + 'px';
         screen.style.maxHeight = termH + 'px';
-        screen.style.width = termW + 'px';
-        screen.style.maxWidth = termW + 'px';
       }
     }
 

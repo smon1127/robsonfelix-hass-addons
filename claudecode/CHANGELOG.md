@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.2] - 2026-03-10
+
+### Fixed
+- Working directory now actually applied via ttyd --cwd flag (was only a UI default before)
+- Reverted all width constraints on terminal elements that broke scrolling
+- Scroll (scrollbar, touch scroll, two-finger) should work again
+
 ## [1.3.1] - 2026-03-10
 
 ### Changed
