@@ -72,6 +72,11 @@ if [ ! -L /root/.claude ]; then
   ln -s "$PERSIST_DIR" /root/.claude
 fi
 
+# Ensure settings.json exists so jq can patch it
+if [ ! -f "$PERSIST_DIR/settings.json" ]; then
+  echo '{"permissions":{"allow":[]}}' > "$PERSIST_DIR/settings.json"
+fi
+
 if [ ! -L /root/.config/claude-code ]; then
   rm -rf /root/.config/claude-code
   ln -s "$PERSIST_DIR/config" /root/.config/claude-code
