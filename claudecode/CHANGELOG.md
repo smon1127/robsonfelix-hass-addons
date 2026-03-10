@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.72] - 2026-03-10
+
+### Added
+- Dismiss keyboard button (down arrow) on the floating keybar
+- Blurs terminal textarea to hide iOS keyboard
+
+### Fixed
+- Terminal now fills exact visible height: forces height on all containers from body down to .xterm-screen
+- When keyboard opens, terminal shrinks to fit (visible height minus keybar)
+- When keyboard closes, terminal expands to 100% screen height
+- Prevents iOS page scroll behind keyboard with `scrollTo(0,0)`
+- Calls xterm fit addon after layout change so terminal reflows text
+
 ## [1.2.71] - 2026-03-10
 
 ### Fixed
