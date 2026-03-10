@@ -215,6 +215,27 @@
     document.body.removeChild(ta);
   }
 
+  function fallbackPaste() {
+    // Create a temporary textarea, focus it, and use execCommand('paste')
+    var ta = document.createElement('textarea');
+    ta.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;';
+    document.body.appendChild(ta);
+    ta.focus();
+    try {
+      if (document.execCommand('paste')) {
+        var text = ta.value;
+        if (text) { sendData(text); showToast('Pasted!'); }
+        else { showToast('Clipboard empty or blocked'); }
+      } else {
+        showToast('Long-press terminal to paste');
+      }
+    } catch (e) {
+      showToast('Long-press terminal to paste');
+    }
+    document.body.removeChild(ta);
+    focusTerm();
+  }
+
   function showToast(msg) {
     var el = document.getElementById('kb-toast');
     if (!el) {
@@ -261,7 +282,8 @@
   // -- CSS --
   var css = document.createElement('style');
   css.textContent =
-    'html,body{margin:0;padding:0;overflow:hidden !important;height:100vh;height:100dvh;}' +
+    'html,body{margin:0;padding:0;overflow:hidden !important;height:100vh;height:100dvh;' +
+    'position:fixed !important;width:100%;top:0;left:0;touch-action:none;}' +
     '#kb-bar{position:fixed;left:0;right:0;z-index:99999;' +
     'display:flex;align-items:center;height:' + BAR_H + 'px;padding:0 3px;' +
     'background:#1a1a1a;border-top:1px solid #333;gap:2px;' +
@@ -315,11 +337,14 @@
   cpBtn.style.display = 'none';
   bar.appendChild(cpBtn);
   bar.appendChild(mkBtn('paste', function () {
+    // Try modern Clipboard API first (requires HTTPS/secure context)
     if (navigator.clipboard && navigator.clipboard.readText) {
       navigator.clipboard.readText().then(function (text) {
         if (text) { sendData(text); showToast('Pasted!'); }
-      }, function () { showToast('Clipboard denied'); });
-    } else { showToast('Clipboard not available'); }
+      }, function () { fallbackPaste(); });
+    } else {
+      fallbackPaste();
+    }
   }));
   bar.appendChild(mkBtn('\u25C0', function () { sendSeq('ArrowLeft'); }, { cls: 'kb-icon' }));
   bar.appendChild(mkBtn('\u25B6', function () { sendSeq('ArrowRight'); }, { cls: 'kb-icon' }));
@@ -417,7 +442,7 @@
     var kbDetected = (fullH - visH) > 100;
 
     if (kbOpen || kbDetected) {
-      var h = kbDetected ? visH : Math.round(fullH * 0.45);
+      var h = kbDetected ? visH : Math.round(fullH * 0.50);
       setHeight(h);
     } else {
       setHeight(fullH);
@@ -477,6 +502,17 @@
         setTimeout(updateLayout, 300);
       }
     });
+
+    // Prevent iframe/page scrolling — only allow scrolling inside terminal and keybar
+    document.addEventListener('touchmove', function (e) {
+      var el = e.target;
+      while (el && el !== document.body) {
+        if (el.id === 'kb-bar') return; // allow keybar horizontal scroll
+        if (el.classList && (el.classList.contains('xterm-screen') || el.classList.contains('xterm'))) return;
+        el = el.parentElement;
+      }
+      e.preventDefault();
+    }, { passive: false });
 
     updateLayout();
     focusTerm();

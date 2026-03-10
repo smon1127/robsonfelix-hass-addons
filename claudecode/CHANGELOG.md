@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.84] - 2026-03-10
+
+### Fixed
+- Iframe no longer scrolls — page is fixed, only terminal content scrolls
+- Default keyboard-open height set to 50% of screen
+- Added touch-action:none and position:fixed on html/body to prevent page bounce
+- Paste button now works in non-HTTPS contexts using execCommand fallback
+
 ## [1.2.83] - 2026-03-10
 
 ### Fixed
