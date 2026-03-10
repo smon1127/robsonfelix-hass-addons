@@ -733,9 +733,7 @@
 
     var xterm = document.querySelector('.xterm');
     if (xterm) {
-      // Only set overflow:hidden on parents ABOVE .xterm
-      // .xterm itself needs overflow for its internal .xterm-viewport scroll
-      var el = xterm.parentElement;
+      var el = xterm;
       while (el && el !== document.body) {
         el.style.height = termH + 'px';
         el.style.maxHeight = termH + 'px';
@@ -847,10 +845,9 @@
         setTimeout(updateLayout, 600);
       }
     });
-    // Also snap to 21 rows on any tap on terminal area (catches cases where
-    // focusin doesn't fire, e.g. textarea already focused but page was at 100%)
-    document.addEventListener('touchstart', function snapOn21(e) {
-      if (hasHadInput) return; // already snapped
+    // Also snap to 21 rows on any tap on terminal area
+    document.addEventListener('touchstart', function (e) {
+      if (hasHadInput) return;
       var el = e.target;
       while (el && el !== document.body) {
         if (el.classList && (el.classList.contains('xterm-screen') || el.classList.contains('xterm'))) {

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.4] - 2026-03-10
+
+### Fixed
+- Reverted overlay.js to exact v1.2.96 (last known working scroll)
+- Re-added snap-to-21 on terminal tap and immediate updateLayout on focusin
+
 ## [1.3.3] - 2026-03-10
 
 ### Fixed
