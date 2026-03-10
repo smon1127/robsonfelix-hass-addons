@@ -13,6 +13,7 @@
   };
 
   var ctrlActive = false;
+  var BAR_H = 36;
 
   function getTextarea() {
     return document.querySelector('.xterm-helper-textarea');
@@ -75,8 +76,9 @@
 
   var css = document.createElement('style');
   css.textContent =
-    '#kb-bar{position:fixed;left:0;right:0;bottom:0;z-index:99999;' +
-    'display:flex;align-items:center;height:36px;padding:0 2px;' +
+    'html,body{height:100%;overflow:hidden;margin:0;padding:0;}' +
+    '#kb-bar{position:absolute;left:0;right:0;z-index:99999;' +
+    'display:flex;align-items:center;height:' + BAR_H + 'px;padding:0 2px;' +
     'background:#1a1a1a;border-top:1px solid #333;gap:1px;' +
     'user-select:none;-webkit-user-select:none;font-family:-apple-system,system-ui,sans-serif;}' +
     '#kb-bar button{flex:0 0 auto;height:30px;min-width:36px;padding:0 8px;margin:0;' +
@@ -87,12 +89,10 @@
     '#kb-bar button.kb-active{background:#3478f6;color:#fff;}' +
     '#kb-bar button.kb-icon{font-size:16px;min-width:38px;}' +
     '#kb-bar .kb-sep{flex:1 1 0;min-width:2px;}' +
-    '#kb-hide{position:fixed;right:8px;bottom:8px;z-index:99998;' +
+    '#kb-hide{position:absolute;right:8px;z-index:99998;' +
     'display:none;width:40px;height:40px;border:0;border-radius:50%;' +
     'background:rgba(30,30,30,0.9);color:#fff;font-size:18px;' +
-    'box-shadow:0 2px 8px rgba(0,0,0,0.4);touch-action:manipulation;}' +
-    'body{padding-bottom:38px !important;}' +
-    '.xterm{padding-bottom:38px !important;}';
+    'box-shadow:0 2px 8px rgba(0,0,0,0.4);touch-action:manipulation;}';
   document.head.appendChild(css);
 
   var bar = document.createElement('div');
@@ -101,6 +101,8 @@
   var showBtn = document.createElement('button');
   showBtn.id = 'kb-hide';
   showBtn.textContent = '\u2328';
+
+  var barHidden = false;
 
   function flash(btn) {
     btn.classList.add('kb-flash');
@@ -129,7 +131,7 @@
     return s;
   }
 
-  // Buttons matching Shellfish layout: fn/ctrl, esc, tab, ^, pipe, clipboard, arrows, keyboard
+  // Buttons
   bar.appendChild(mkBtn('ctrl', toggleCtrl, { id: 'kb-ctrl', toggle: true }));
   bar.appendChild(mkBtn('esc', function () { sendSeq('Escape'); }));
   bar.appendChild(mkBtn('tab', function () { sendSeq('Tab'); }));
@@ -143,19 +145,62 @@
   bar.appendChild(mkBtn('\u25BC', function () { sendSeq('ArrowDown'); }, { cls: 'kb-icon' }));
   bar.appendChild(mkSep());
   bar.appendChild(mkBtn('\u2328', function () {
-    bar.style.display = 'none';
-    showBtn.style.display = 'block';
-    document.body.style.paddingBottom = '0';
+    barHidden = true;
+    updateLayout();
   }, { cls: 'kb-icon' }));
 
   showBtn.addEventListener('click', function () {
-    bar.style.display = 'flex';
-    showBtn.style.display = 'none';
-    document.body.style.paddingBottom = '38px';
+    barHidden = false;
+    updateLayout();
     focusTerm();
   });
 
-  // Suppress iOS form accessory bar (arrows + checkmark) and autocorrect
+  // Use visualViewport API to position bar and resize terminal
+  function updateLayout() {
+    var vv = window.visualViewport;
+    var vh = vv ? vv.height : window.innerHeight;
+    var vTop = vv ? vv.offsetTop : 0;
+
+    // Find xterm container and resize it
+    var xtermEl = document.querySelector('.xterm');
+    var termContainer = xtermEl ? xtermEl.parentElement : null;
+
+    if (barHidden) {
+      bar.style.display = 'none';
+      showBtn.style.display = 'block';
+      showBtn.style.top = (vTop + vh - 48) + 'px';
+      if (termContainer) termContainer.style.height = vh + 'px';
+      if (xtermEl) xtermEl.style.height = vh + 'px';
+    } else {
+      bar.style.display = 'flex';
+      showBtn.style.display = 'none';
+      bar.style.top = (vTop + vh - BAR_H) + 'px';
+      var termH = vh - BAR_H;
+      if (termContainer) termContainer.style.height = termH + 'px';
+      if (xtermEl) xtermEl.style.height = termH + 'px';
+    }
+
+    // Tell xterm to refit
+    if (window.term && window.term._core) {
+      try {
+        var renderer = window.term._core._renderService;
+        if (renderer) renderer.onResize(window.term.cols, window.term.rows);
+      } catch (e) {}
+      // Also try the fit addon if available
+      try {
+        if (window.term._addonManager) {
+          var addons = window.term._addonManager._addons;
+          for (var i = 0; i < addons.length; i++) {
+            if (addons[i].instance && typeof addons[i].instance.fit === 'function') {
+              addons[i].instance.fit();
+            }
+          }
+        }
+      } catch (e) {}
+    }
+  }
+
+  // Suppress iOS form accessory bar and autocorrect
   function patchTextarea(ta) {
     if (!ta) return;
     ta.setAttribute('autocomplete', 'off');
@@ -163,8 +208,6 @@
     ta.setAttribute('autocapitalize', 'none');
     ta.setAttribute('spellcheck', 'false');
     ta.setAttribute('enterkeyhint', '');
-    // contenteditable trick: iOS hides the form accessory bar for contenteditable
-    // We wrap with a contenteditable parent to hint iOS to skip the toolbar
     ta.style.webkitUserModify = 'read-write-plaintext-only';
     ta.addEventListener('keydown', onTermKeydown, true);
   }
@@ -174,7 +217,6 @@
     document.body.appendChild(showBtn);
     var ta = getTextarea();
     patchTextarea(ta);
-    // Retry if textarea not ready yet
     if (!ta) {
       var obs = new MutationObserver(function () {
         var ta2 = getTextarea();
@@ -185,6 +227,16 @@
       });
       obs.observe(document.body, { childList: true, subtree: true });
     }
+
+    // Listen to visualViewport changes (keyboard open/close, resize)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateLayout);
+      window.visualViewport.addEventListener('scroll', updateLayout);
+    }
+    window.addEventListener('resize', updateLayout);
+
+    // Initial layout
+    updateLayout();
     focusTerm();
   }
 

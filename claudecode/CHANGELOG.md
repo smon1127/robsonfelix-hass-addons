@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.71] - 2026-03-10
+
+### Fixed
+- Terminal now fills visible viewport above keyboard (no empty gap)
+- Keybar positioned using `visualViewport` API — sits directly above iOS keyboard
+- Terminal height dynamically adjusts when keyboard opens/closes
+- Attempts xterm fit/resize when viewport changes
+
 ## [1.2.70] - 2026-03-10
 
 ### Fixed
