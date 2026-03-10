@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.3] - 2026-03-10
+
+### Fixed
+- Fixed scroll: overflow:hidden loop now starts from xterm.parentElement, not xterm itself
+- xterm's internal .xterm-viewport needs its own overflow to handle scrollback
+
 ## [1.3.2] - 2026-03-10
 
 ### Fixed

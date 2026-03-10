@@ -733,7 +733,9 @@
 
     var xterm = document.querySelector('.xterm');
     if (xterm) {
-      var el = xterm;
+      // Only set overflow:hidden on parents ABOVE .xterm
+      // .xterm itself needs overflow for its internal .xterm-viewport scroll
+      var el = xterm.parentElement;
       while (el && el !== document.body) {
         el.style.height = termH + 'px';
         el.style.maxHeight = termH + 'px';
