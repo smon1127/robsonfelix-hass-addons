@@ -484,15 +484,15 @@
       fallbackPaste();
     }
   }, { cls: 'kb-icon', html: true }));
-  // Resize handle — next to paste button, highlights while dragging
-  var resizeBtn = mkBtn('<i class="fa-solid fa-up-down"></i>', function () {}, { id: 'kb-resize', cls: 'kb-resize', html: true });
-  resizeBtn.addEventListener('touchstart', onResizeTouchStart, { passive: false });
-  bar.appendChild(resizeBtn);
   bar.appendChild(mkBtn('ctrl', toggleCtrl, { id: 'kb-ctrl', toggle: true }));
   bar.appendChild(mkBtn('tab', function () { sendSeq('Tab'); }));
   bar.appendChild(mkBtn('opt', toggleOpt, { id: 'kb-opt', toggle: true }));
   // Keyboard toggle
   bar.appendChild(mkBtn('<i class="fa-regular fa-keyboard"></i>', toggleKeyboard, { id: 'kb-kbd', cls: 'kb-icon', toggle: true, norefocus: true, html: true }));
+  // Resize handle — far right, highlights while dragging
+  var resizeBtn = mkBtn('<i class="fa-solid fa-up-down"></i>', function () {}, { id: 'kb-resize', cls: 'kb-resize', html: true });
+  resizeBtn.addEventListener('touchstart', onResizeTouchStart, { passive: false });
+  bar.appendChild(resizeBtn);
 
   // -- Custom scrollbar --
   var sbEl = document.createElement('div');

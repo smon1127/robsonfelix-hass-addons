@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.95] - 2026-03-10
+
+### Changed
+- Moved drag/resize handle to far right of the keybar
+
 ## [1.2.94] - 2026-03-10
 
 ### Added
