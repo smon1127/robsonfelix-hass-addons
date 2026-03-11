@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.5] - 2026-03-11
+
+### Fixed
+- Fix working directory: use tmux -c and ttyd --cwd together for reliable /homeassistant start
+- Restore tmux -A flag for session reattach
+
 ## [1.4.4] - 2026-03-11
 
 ### Fixed
