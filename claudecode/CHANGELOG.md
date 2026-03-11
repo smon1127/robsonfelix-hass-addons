@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.6] - 2026-03-11
+
+### Fixed
+- Refactor: reverted start.sh to v1.2.64 working directory approach (Dockerfile WORKDIR handles it)
+- Removed all --cwd, WORK_DIR, tmux -c, tmux kill-session hacks
+- Removed working_directory config option (never worked reliably with tmux)
+- Terminal always starts in /homeassistant via Dockerfile WORKDIR
+
 ## [1.4.5] - 2026-03-11
 
 ### Fixed
