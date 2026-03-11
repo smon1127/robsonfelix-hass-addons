@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.4] - 2026-03-11
+
+### Fixed
+- Fix working directory: cd to WORK_DIR before launching ttyd so tmux inherits correct cwd
+- Removed --cwd flag and -c tmux flag in favor of simple cd (more reliable)
+
 ## [1.4.3] - 2026-03-10
 
 ### Changed

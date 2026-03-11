@@ -141,16 +141,17 @@ else
   COLORS='background=#eff1f5,foreground=#4c4f69,cursor=#dc8a78'
 fi
 
+cd "$WORK_DIR"
+
 if [ "$SESSION_PERSIST" = "true" ]; then
   # Kill old tmux session so new one starts in WORK_DIR
   tmux kill-session -t claude 2>/dev/null || true
-  SHELL_CMD="tmux new-session -s claude -c $WORK_DIR"
+  SHELL_CMD='tmux new-session -s claude'
 else
   SHELL_CMD='bash --login'
 fi
 
 ttyd --port 7682 --writable --ping-interval 30 --max-clients 5 \
-  --cwd "$WORK_DIR" \
   -t fontSize="$FONT_SIZE" \
   -t fontFamily=Monaco,Consolas,monospace \
   -t scrollback=20000 \
