@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.7] - 2026-03-11
+
+### Fixed
+- Resize handle position remembered when keyboard is open, restored on re-open
+- Keyboard hidden → always expands to 100% height (ignores custom drag position)
+- Keyboard shown again → restores to previous drag position
+
 ## [1.4.6] - 2026-03-11
 
 ### Fixed

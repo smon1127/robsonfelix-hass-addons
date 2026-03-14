@@ -756,21 +756,19 @@
   }
 
   function updateLayout() {
-    // If user set a custom height via resize handle, use that
-    if (customH > 0) {
-      setHeight(customH + BAR_H);
-      return;
-    }
-
     var vv = window.visualViewport;
     var visH = vv ? Math.round(vv.height) : window.innerHeight;
     if (visH > fullH) fullH = visH;
 
     if (kbOpen) {
-      // Keyboard open: always 21 rows
-      setHeight(getDefaultKbHeight());
+      // Keyboard open: use custom drag position if set, otherwise 21 rows
+      if (customH > 0) {
+        setHeight(customH + BAR_H);
+      } else {
+        setHeight(getDefaultKbHeight());
+      }
     } else {
-      // Keyboard closed: full height
+      // Keyboard closed: always full height
       setHeight(fullH);
     }
   }
